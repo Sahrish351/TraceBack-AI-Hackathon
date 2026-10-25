@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3-61dafb.svg)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-5.4-646cff.svg)](https://vitejs.dev/)
-[![Vitest](https://img.shields.io/badge/Vitest-45%2F45%20Passing-green.svg)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-54%2F54%20Passing-green.svg)](https://vitest.dev/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8.svg)](https://tailwindcss.com/)
 [![NVIDIA NIM](https://img.shields.io/badge/NVIDIA%20NIM-Llama%203.1-76b900.svg)](https://build.nvidia.com/)
 [![Zetaris](https://img.shields.io/badge/Zetaris-Data%20Virtualization-00bcd4.svg)](https://www.zetaris.com/)
@@ -158,7 +158,7 @@ npm run dev
 
 ---
 
-## 🧪 Comprehensive Automated Testing (45 / 45 Tests Passing)
+## 🧪 Comprehensive Automated Testing (54 / 54 Tests Passing)
 
 All reconciliation logic, sponsor adapters, fallbacks, and security boundaries are backed by automated tests:
 
@@ -187,7 +187,14 @@ npm test
    - Grounded deterministic fallback explanation
    - Concordant zero-discrepancy scenario
    - HTTP timeout (8s) and error resilience
-5. `backend/tests/api_endpoints.test.ts` (7 tests):
+6. `backend/tests/auth_and_persistence.test.ts` (9 tests):
+   - Persona listing & credentials verification
+   - PBKDF2/scrypt password hashing & session token management
+   - Dynamic audit log generation
+   - Export report with SHA-256 verification hash
+   - File-backed H-MEM persistence across simulated server restarts
+   - Reset session state controls
+7. `backend/tests/api_endpoints.test.ts` (7 tests):
    - Health endpoint honest 5-state reporting
    - Purchase order listing
    - Canonical PO-1042 and multi-item PO-2005 endpoints

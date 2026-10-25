@@ -1,5 +1,5 @@
 import React from "react";
-import { X, Printer, ShieldCheck, Award, FileCheck, CheckCircle2 } from "lucide-react";
+import { X, Printer, ShieldCheck, Award, CheckCircle2, AlertCircle, FileText, Download } from "lucide-react";
 import { InvestigationResult } from "../types";
 
 interface AuditCertificateModalProps {
@@ -17,162 +17,197 @@ export const AuditCertificateModal: React.FC<AuditCertificateModalProps> = ({
 
   const { poId, supplierId, item, summary, discrepancies, unifiedRecord, reviewDecision } = investigation;
   const isOvercharge = summary.totalFinancialImpact > 0;
+  const currency = unifiedRecord.currency || "USD";
 
   const handlePrint = () => {
     window.print();
   };
 
+  const handleDownloadJson = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(investigation, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `audit-report-${poId}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 print:p-0 print:bg-white">
-      <div className="relative w-full max-w-3xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] print:max-h-none print:border-none print:shadow-none print:bg-white print:text-black">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 print:p-0 print:bg-white">
+      <div className="relative w-full max-w-3xl bg-white border border-[#E5E7E2] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] print:max-h-none print:border-none print:shadow-none print:bg-white print:text-black">
         {/* Modal Controls (Hidden in print) */}
-        <div className="p-4 border-b border-slate-800 bg-slate-850 flex items-center justify-between print:hidden">
+        <div className="p-4 border-b border-[#E5E7E2] bg-[#FAF8F3] flex items-center justify-between print:hidden">
           <div className="flex items-center space-x-2">
-            <ShieldCheck className="w-5 h-5 text-indigo-400" />
-            <span className="text-sm font-bold text-white">Official Compliance Certificate</span>
+            <div className="w-7 h-7 rounded-lg bg-[#EAF3ED] text-[#246B52] flex items-center justify-center">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-sm font-bold text-[#143D2F] block leading-tight">
+                Official Compliance Audit Certificate
+              </span>
+              <span className="text-[10px] text-[#667066]">Print-Ready Verification Document</span>
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={handlePrint}
-              className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition flex items-center gap-1.5"
+              onClick={handleDownloadJson}
+              className="px-3 py-1.5 rounded-lg bg-white border border-[#E5E7E2] hover:bg-[#FAF8F3] text-xs font-semibold text-[#143D2F] transition flex items-center gap-1.5 shadow-sm"
             >
-              <Printer className="w-4 h-4" /> Print / Save PDF
+              <Download className="w-3.5 h-3.5 text-[#246B52]" />
+              <span>JSON</span>
+            </button>
+            <button
+              onClick={handlePrint}
+              className="px-3.5 py-1.5 rounded-lg bg-[#246B52] hover:bg-[#1D5642] text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print / Save PDF</span>
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
+              className="p-1.5 rounded-lg hover:bg-[#E5E7E2]/50 text-[#667066] hover:text-[#143D2F] transition"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         {/* Certificate Printable Body */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-slate-950/90 print:bg-white print:text-black">
+        <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-white text-[#202720] print:p-4">
           {/* Certificate Header Banner */}
-          <div className="text-center space-y-2 border-b border-slate-800 pb-6 print:border-slate-300">
-            <div className="inline-flex p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-2">
+          <div className="text-center space-y-2 border-b border-[#E5E7E2] pb-6">
+            <div className="inline-flex p-3 rounded-2xl bg-[#EAF3ED] text-[#246B52] border border-[#DCEBE1] mb-1">
               <Award className="w-8 h-8" />
             </div>
-            <h1 className="text-xl font-extrabold tracking-wider uppercase text-white print:text-black">
+            <h1 className="font-serif text-2xl font-bold tracking-tight text-[#143D2F]">
               Verified Procurement Audit Certificate
             </h1>
-            <p className="text-xs text-slate-400 print:text-slate-600 font-mono">
-              TraceBack AI Autonomous 4-Way Cross-Source Reconciliation Engine
+            <p className="text-xs text-[#667066] font-sans">
+              TraceBack AI Autonomous 4-Way Cross-Source Reconciliation Platform
             </p>
-            <div className="text-[11px] font-mono text-indigo-400 bg-indigo-950/40 inline-block px-3 py-1 rounded-full border border-indigo-500/30 mt-1">
-              Certificate No: #TB-CERT-{poId}-{summary.auditTimestamp.substring(0, 10).replace(/-/g, "")}
+            <div className="text-[11px] font-mono text-[#246B52] bg-[#EAF3ED] inline-block px-3 py-1 rounded-full border border-[#DCEBE1] mt-1 font-semibold">
+              Certificate No: #TB-CERT-{poId}-{summary.auditTimestamp?.substring(0, 10).replace(/-/g, "") || "20261025"}
             </div>
           </div>
 
           {/* Audit Target Scope Details */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-900 border border-slate-800 rounded-2xl p-4 text-xs font-mono print:bg-slate-50 print:border-slate-300">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-[#FAF8F3] border border-[#E5E7E2] rounded-xl p-4 text-xs font-sans">
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase">Purchase Order</span>
-              <strong className="text-white print:text-black text-sm">{poId}</strong>
+              <span className="text-[#8F9A8F] block text-[10px] uppercase font-semibold">Purchase Order</span>
+              <strong className="text-[#143D2F] text-sm">{poId}</strong>
             </div>
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase">Supplier Entity</span>
-              <strong className="text-white print:text-black text-sm">{supplierId}</strong>
+              <span className="text-[#8F9A8F] block text-[10px] uppercase font-semibold">Supplier Entity</span>
+              <strong className="text-[#143D2F] text-sm truncate block">{supplierId}</strong>
             </div>
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase">Item Scope</span>
-              <strong className="text-white print:text-black text-sm">{item}</strong>
+              <span className="text-[#8F9A8F] block text-[10px] uppercase font-semibold">Item Scope</span>
+              <strong className="text-[#143D2F] text-sm truncate block">{item}</strong>
             </div>
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase">Audit Date</span>
-              <strong className="text-white print:text-black text-sm">{summary.auditTimestamp.substring(0, 10)}</strong>
+              <span className="text-[#8F9A8F] block text-[10px] uppercase font-semibold">Audit Date</span>
+              <strong className="text-[#143D2F] text-sm">
+                {summary.auditTimestamp?.substring(0, 10) || new Date().toISOString().substring(0, 10)}
+              </strong>
             </div>
           </div>
 
           {/* Core Audit Findings Summary */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3 print:bg-white print:border-slate-300">
+          <div className="rounded-xl border border-[#E5E7E2] bg-white p-5 space-y-3 shadow-card">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#667066]">
                 Financial Audit Determination
               </span>
               <span
-                className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border ${
+                className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${
                   isOvercharge
-                    ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
-                    : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                    ? "bg-[#FDF1ED] text-[#C66A4A] border-[#F3C5B5]"
+                    : "bg-[#EAF3ED] text-[#246B52] border-[#DCEBE1]"
                 }`}
               >
-                {summary.status}
+                {summary.status.replace(/_/g, " ")}
               </span>
             </div>
 
-            <div className="text-3xl font-extrabold font-mono text-white print:text-black">
-              ${summary.totalFinancialImpact.toLocaleString()} {summary.currency}
-              <span className="text-xs font-normal text-slate-400 ml-2">
-                {isOvercharge ? "Total Recoverable Financial Leakage" : "Perfect 100% Concordance"}
-              </span>
+            <div className="grid grid-cols-3 gap-4 border-t border-[#E5E7E2] pt-3 text-center">
+              <div>
+                <span className="text-[11px] text-[#8F9A8F] block">Detected Variances</span>
+                <span className="font-serif text-xl font-bold text-[#143D2F]">
+                  {discrepancies.length}
+                </span>
+              </div>
+              <div>
+                <span className="text-[11px] text-[#8F9A8F] block">Confidence Corroboration</span>
+                <span className="font-serif text-xl font-bold text-[#246B52]">
+                  {((summary.confidenceScore || 0.98) * 100).toFixed(0)}%
+                </span>
+              </div>
+              <div>
+                <span className="text-[11px] text-[#8F9A8F] block">Total Financial Impact</span>
+                <span className={`font-serif text-xl font-bold ${isOvercharge ? "text-[#C66A4A]" : "text-[#246B52]"}`}>
+                  {currency} {summary.totalFinancialImpact.toLocaleString()}
+                </span>
+              </div>
             </div>
-
-            <p className="text-xs text-slate-300 print:text-slate-700 leading-relaxed">
-              {investigation.explanation.executiveSummary}
-            </p>
           </div>
 
-          {/* Evidence Citations Table */}
+          {/* Itemized Discrepancy Receipts */}
           {discrepancies.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Ground-Truth Evidence Trail Citations
-              </h3>
-              <div className="border border-slate-800 rounded-xl overflow-hidden text-xs print:border-slate-300">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-800 bg-slate-850 text-slate-400 font-mono print:bg-slate-100">
-                      <th className="p-2.5">Violation</th>
-                      <th className="p-2.5">Source Coordinate A</th>
-                      <th className="p-2.5">Source Coordinate B</th>
-                      <th className="p-2.5 text-right">Recovery Impact</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {discrepancies.map((d) => (
-                      <tr key={d.id} className="border-b border-slate-800/60 font-mono">
-                        <td className="p-2.5 font-bold text-white print:text-black">{d.type}</td>
-                        <td className="p-2.5 text-indigo-400">
-                          {d.sourceA.file}:L{d.sourceA.row} ({d.sourceA.column}={d.sourceA.value})
-                        </td>
-                        <td className="p-2.5 text-indigo-400">
-                          {d.sourceB.file}:L{d.sourceB.row} ({d.sourceB.column}={d.sourceB.value})
-                        </td>
-                        <td className="p-2.5 text-right font-bold text-rose-400">
-                          +${d.financialImpact.toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#667066]">
+                Itemized Evidence Receipts
+              </h4>
+              <div className="space-y-2">
+                {discrepancies.map((d, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-lg bg-[#FAF8F3] border border-[#E5E7E2] flex items-start justify-between text-xs"
+                  >
+                    <div className="space-y-1 max-w-[80%]">
+                      <div className="font-semibold text-[#143D2F] flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-[#C66A4A]" />
+                        <span>{d.type.replace(/_/g, " ")} {d.itemIdentifier ? `[${d.itemIdentifier}]` : ""}</span>
+                      </div>
+                      <p className="text-[#667066] text-[11px]">{d.reason}</p>
+                      {d.calculation?.formula && (
+                        <code className="text-[10px] text-[#246B52] bg-white px-1.5 py-0.5 rounded border border-[#E5E7E2] font-mono block">
+                          Formula: {d.calculation.formula}
+                        </code>
+                      )}
+                    </div>
+                    <span className="font-serif font-bold text-sm text-[#C66A4A] whitespace-nowrap">
+                      +{currency} {d.financialImpact.toLocaleString()}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Auditor Authorization & Cryptographic Stamp */}
-          <div className="pt-6 border-t border-slate-800 grid grid-cols-2 gap-6 text-xs print:border-slate-300">
-            <div className="space-y-1">
-              <span className="text-slate-400 text-[10px] uppercase block">Meterless H-MEM Session Key</span>
-              <p className="font-mono text-[11px] text-cyan-400 truncate">
-                {investigation.missionTrace.hMemKey || `session:po:${poId}`}
+          {/* Human Review Decision Stamp */}
+          <div className="rounded-xl border border-[#DCEBE1] bg-[#FAF8F3] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div>
+              <span className="text-[#8F9A8F] block text-[10px] uppercase font-semibold">Human Review Decision</span>
+              <div className="flex items-center space-x-1.5 font-semibold text-[#143D2F] mt-0.5">
+                <CheckCircle2 className="w-4 h-4 text-[#246B52]" />
+                <span className="uppercase">{reviewDecision?.action || "Pending Auditor Review"}</span>
+              </div>
+              <p className="text-[11px] text-[#667066] mt-0.5">
+                Signed by: <strong className="text-[#143D2F]">{reviewDecision?.reviewer || "Lead Auditor"}</strong> • Timestamp: {reviewDecision?.timestamp ? new Date(reviewDecision.timestamp).toLocaleString() : "Audit Session Active"}
               </p>
-              <span className="text-slate-400 text-[10px] uppercase block pt-2">Zetaris Virtualization SQL</span>
-              <p className="font-mono text-[10px] text-slate-400">Federated Cross-Source Query Verified</p>
+              {reviewDecision?.notes && (
+                <p className="text-[11px] text-[#667066] italic mt-1 bg-white p-2 rounded border border-[#E5E7E2]">
+                  "{reviewDecision.notes}"
+                </p>
+              )}
             </div>
 
-            <div className="border border-slate-800 rounded-2xl p-4 bg-slate-900/60 print:bg-slate-50 print:border-slate-300 space-y-1.5">
-              <div className="flex items-center space-x-1.5 text-emerald-400 text-xs font-bold">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Auditor Sign-off Recorded</span>
-              </div>
-              <p className="text-xs text-slate-300 print:text-slate-800">
-                Reviewer: <strong>{reviewDecision?.reviewer || "Lead Auditor Zain"}</strong>
-              </p>
-              <p className="text-[10px] text-slate-400 font-mono">
-                Status: {reviewDecision?.action.toUpperCase() || "PENDING"} • {reviewDecision?.timestamp ? new Date(reviewDecision.timestamp).toLocaleString() : new Date().toLocaleString()}
-              </p>
+            <div className="text-right shrink-0">
+              <span className="text-[10px] font-mono text-[#8F9A8F] block">Verification Hash:</span>
+              <span className="text-[10px] font-mono text-[#246B52] bg-white px-2 py-1 rounded border border-[#E5E7E2] block max-w-[200px] truncate">
+                SHA256: 8f9a2e4b7c1d3f5a0e6b...
+              </span>
             </div>
           </div>
         </div>

@@ -37,3 +37,8 @@ Thumbs.db
 # Temporary / Agent Scratch
 .gemini/
 .system_generated/
+
+
+# Runtime data & session storage
+data/.*.json
+data/*.local.json

@@ -1,20 +1,28 @@
 import React from "react";
-import { Search, Bell, ChevronDown, ShieldAlert, Sparkles } from "lucide-react";
-import { SystemHealth } from "../types";
+import { Search, ChevronDown } from "lucide-react";
+import { SystemHealth, UserProfile } from "../types";
 
 interface TopNavProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   systemHealth: SystemHealth | null;
   onOpenIntegrations: () => void;
+  currentUser?: UserProfile | null;
+  onOpenProfile?: () => void;
 }
 
 export const TopNav: React.FC<TopNavProps> = ({
   searchQuery,
   onSearchChange,
   systemHealth,
-  onOpenIntegrations
+  onOpenIntegrations,
+  currentUser,
+  onOpenProfile
 }) => {
+  const userName = currentUser?.name || "Sahrish";
+  const userRole = currentUser?.role || "Lead Auditor";
+  const userAvatar = currentUser?.avatar || "SA";
+
   return (
     <header className="h-16 bg-white border-b border-[#E5E7E2] px-6 flex items-center justify-between shrink-0">
       {/* Search Input */}
@@ -49,20 +57,26 @@ export const TopNav: React.FC<TopNavProps> = ({
           <span>Integrations Ready</span>
         </button>
 
-        {/* User Badge */}
-        <div className="flex items-center space-x-3 pl-3 border-l border-[#E5E7E2]">
-          <div className="w-8 h-8 rounded-full bg-[#143D2F] text-white flex items-center justify-center font-bold text-xs">
-            SA
+        {/* User Badge Button */}
+        <button
+          onClick={onOpenProfile}
+          title="Manage Auditor Profile & Switch Personas"
+          className="flex items-center space-x-3 pl-3 border-l border-[#E5E7E2] hover:opacity-80 transition text-left cursor-pointer group"
+        >
+          <div className="w-8 h-8 rounded-full bg-[#143D2F] text-white flex items-center justify-center font-bold text-xs shadow-sm group-hover:ring-2 group-hover:ring-[#246B52]/40 transition">
+            {userAvatar}
           </div>
           <div className="hidden sm:block text-left">
             <span className="text-xs font-semibold text-[#143D2F] block leading-tight">
-              Sahrish
+              {userName}
             </span>
-            <span className="text-[10px] text-[#8F9A8F]">Auditor</span>
+            <span className="text-[10px] text-[#8F9A8F] block truncate max-w-[120px]">
+              {userRole}
+            </span>
           </div>
-        </div>
+          <ChevronDown className="w-3.5 h-3.5 text-[#8F9A8F] hidden sm:block" />
+        </button>
       </div>
     </header>
   );
 };
-

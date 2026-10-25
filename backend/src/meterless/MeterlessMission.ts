@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { config, isMeterlessLive } from "../config.js";
 import { logger } from "../utils/logger.js";
 import {
@@ -19,12 +21,45 @@ import { nvidiaExplainer } from "../nvidia/NvidiaExplainer.js";
  */
 class HMemStore {
   private memory = new Map<string, any>();
+  private persistPath: string;
+
+  constructor() {
+    this.persistPath = path.join(config.dataPath, ".h_mem_store.json");
+    this.loadFromDisk();
+  }
+
+  private loadFromDisk(): void {
+    try {
+      if (fs.existsSync(this.persistPath)) {
+        const raw = fs.readFileSync(this.persistPath, "utf-8");
+        const parsed = JSON.parse(raw);
+        for (const [k, v] of Object.entries(parsed)) {
+          this.memory.set(k, v);
+        }
+      }
+    } catch (err) {
+      logger.warn({ err }, "[HMemStore] Failed to restore persistent state from disk");
+    }
+  }
+
+  private saveToDisk(): void {
+    try {
+      const dump: Record<string, any> = {};
+      for (const [k, v] of this.memory.entries()) {
+        dump[k] = v;
+      }
+      fs.writeFileSync(this.persistPath, JSON.stringify(dump, null, 2), "utf-8");
+    } catch (err) {
+      logger.warn({ err }, "[HMemStore] Failed to persist state to disk");
+    }
+  }
 
   set(key: string, value: any): void {
     this.memory.set(key, {
       data: value,
       updatedAt: new Date().toISOString()
     });
+    this.saveToDisk();
   }
 
   get(key: string): any {
@@ -33,6 +68,12 @@ class HMemStore {
 
   has(key: string): boolean {
     return this.memory.has(key);
+  }
+
+  delete(key: string): boolean {
+    const res = this.memory.delete(key);
+    this.saveToDisk();
+    return res;
   }
 
   listKeys(): string[] {
@@ -45,6 +86,73 @@ class HMemStore {
       dump[k] = v;
     }
     return dump;
+  }
+
+  appendAuditLog(event: {
+    id?: string;
+    type: "investigation" | "review" | "system" | "security";
+    title: string;
+    description: string;
+    status: "Verified" | "Flagged for Review" | "Clean" | "Approved" | "Rejected" | "Clarification Requested";
+    actor: string;
+    poId?: string;
+    meta?: any;
+  }): void {
+    const existing: any[] = this.get("audit:logs") || [];
+    const logEntry = {
+      id: event.id || `LOG-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+      timestamp: new Date().toISOString(),
+      ...event
+    };
+    existing.unshift(logEntry);
+    if (existing.length > 100) existing.length = 100;
+    this.set("audit:logs", existing);
+  }
+
+  getAuditLogs(): any[] {
+    const logs = this.get("audit:logs");
+    if (logs && Array.isArray(logs) && logs.length > 0) return logs;
+    return [
+      {
+        id: "LOG-INIT-1042",
+        type: "investigation",
+        title: "PO-1042 / INV-7781 Investigation Run",
+        description: "4-way reconciliation completed across ERP, WMS, and Billing for Northstar Office Supplies.",
+        status: "Flagged for Review",
+        actor: "System Agent (Meterless)",
+        poId: "PO-1042",
+        timestamp: new Date(Date.now() - 3600000 * 4).toISOString()
+      },
+      {
+        id: "LOG-INIT-2005",
+        type: "investigation",
+        title: "PO-2005 Multi-Item Consignment Audit",
+        description: "Reconciled 5 line items for Lita Co. (Braintec). Flagged $3,150 potential variance.",
+        status: "Flagged for Review",
+        actor: "System Agent (Meterless)",
+        poId: "PO-2005",
+        timestamp: new Date(Date.now() - 3600000 * 8).toISOString()
+      },
+      {
+        id: "LOG-INIT-1002",
+        type: "investigation",
+        title: "PO-1002 Clean Concordance Verification",
+        description: "Zero discrepancies observed across 50 units. Approved for disbursement.",
+        status: "Clean",
+        actor: "System Agent (Meterless)",
+        poId: "PO-1002",
+        timestamp: new Date(Date.now() - 3600000 * 24).toISOString()
+      }
+    ];
+  }
+
+  reset(): void {
+    this.memory.clear();
+    try {
+      if (fs.existsSync(this.persistPath)) {
+        fs.unlinkSync(this.persistPath);
+      }
+    } catch {}
   }
 }
 

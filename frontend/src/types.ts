@@ -300,3 +300,26 @@ export interface SystemHealth {
     };
   };
 }
+
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  type: "investigation" | "review" | "system" | "security";
+  title: string;
+  description: string;
+  status: "Verified" | "Flagged for Review" | "Clean" | "Approved" | "Rejected" | "Clarification Requested";
+  actor: string;
+  poId?: string;
+  meta?: any;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  avatar: string;
+  department: string;
+  permissions: string[];
+}

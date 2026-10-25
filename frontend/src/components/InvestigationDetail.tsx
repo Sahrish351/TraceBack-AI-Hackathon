@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   ArrowLeft,
+  Award,
   AlertCircle,
   CheckCircle2,
   FileSpreadsheet,
@@ -24,13 +25,15 @@ interface InvestigationDetailProps {
   onBack: () => void;
   onOpenReview: () => void;
   onViewSourceFile: (fileName: string) => void;
+  onOpenCertificate?: () => void;
 }
 
 export const InvestigationDetail: React.FC<InvestigationDetailProps> = ({
   investigation,
   onBack,
   onOpenReview,
-  onViewSourceFile
+  onViewSourceFile,
+  onOpenCertificate
 }) => {
   const [activeTab, setActiveTab] = useState<"summary" | "sources" | "evidence" | "timeline" | "explanation">("summary");
   const [copiedEmail, setCopiedEmail] = useState(false);
@@ -114,16 +117,29 @@ export const InvestigationDetail: React.FC<InvestigationDetailProps> = ({
           </p>
         </div>
 
-        {/* Action Button */}
-        {!isClean && (
-          <button
-            onClick={onOpenReview}
-            className="inline-flex items-center space-x-2 bg-[#246B52] hover:bg-[#1D5642] text-white px-5 py-2.5 rounded-lg text-sm font-medium transition shadow-sm"
-          >
-            <span>Review Finding</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        )}
+        {/* Action Buttons */}
+        <div className="flex items-center space-x-2">
+          {onOpenCertificate && (
+            <button
+              onClick={onOpenCertificate}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-lg bg-white border border-[#E5E7E2] hover:bg-[#FAF8F3] text-[#143D2F] text-xs font-semibold transition shadow-sm"
+              title="View and print official audit compliance certificate"
+            >
+              <Award className="w-4 h-4 text-[#246B52]" />
+              <span>Audit Certificate</span>
+            </button>
+          )}
+
+          {!isClean && (
+            <button
+              onClick={onOpenReview}
+              className="inline-flex items-center space-x-2 bg-[#246B52] hover:bg-[#1D5642] text-white px-5 py-2.5 rounded-lg text-sm font-medium transition shadow-sm"
+            >
+              <span>Review Finding</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 3. Potential Discrepancy Banner */}
