@@ -82,3 +82,30 @@ A formal audit against all official hackathon rules and PRD specifications was c
   - Official submission deadline (conflicting dates between build pack documentation and platform countdown)
 - **Not Implemented (1 item):**
   - Demo video (1–4 minute video presentation to be recorded by participant)
+
+
+---
+
+## 4. Milestone 3 — Integration Reality Check
+
+An audit of all external sponsor touchpoints was conducted and documented in `docs/INTEGRATION_REALITY_CHECK.md`.
+
+### Summary of Integration Realities:
+1. **Zetaris:**
+   - Real endpoint: Example placeholder in `.env.example`.
+   - Live call vs. Fallback: Operates on genuine local in-memory SQLite federator joining 4 CSV datasets.
+   - UI status: Accurately displays `Local / demo mode` (Engine: `in-memory-sqlite-virtualizer`).
+   - Blocker: No provisioned enterprise Zetaris tenant credentials.
+2. **Meterless:**
+   - Real endpoint: Example placeholder in `.env.example`.
+   - Live call vs. Fallback: Runs full 5-step autonomous agent mission locally with observable trace logging and H-MEM state persistence.
+   - UI status: Accurately displays `Local / demo mode` (Architecture: `5-step autonomous relay + H-MEM`).
+   - Blocker: No remote Meterless webhook orchestrator URL.
+3. **NVIDIA NIM:**
+   - Real endpoint: `https://integrate.api.nvidia.com/v1/chat/completions` (real, documented NVIDIA NIM OpenAI-compatible endpoint).
+   - Live call vs. Fallback: Automatically falls back to deterministic rule-based template because `NVIDIA_API_KEY` is not present in `.env`.
+   - Guardrails: Strict immutable financial guardrails enforced; LLM is never allowed to perform financial calculations.
+   - UI status: Accurately displays `Local / demo mode (Deterministic Fallback)`.
+   - Blocker: Free developer API key (`nvapi-...`) not yet added to `.env`.
+4. **Cursor:**
+   - Confirmed used for codebase creation, modular refactoring, test engineering, and prompt pack generation.
