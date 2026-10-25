@@ -32,9 +32,9 @@ jobs:
 
       - name: Install Monorepo Dependencies
         run: |
-          npm install
-          npm install --workspace=backend
-          npm install --workspace=frontend
+          npm install --include=optional
+          npm install --no-save @rollup/rollup-linux-x64-gnu
+          cd backend && npm install --no-save @rollup/rollup-linux-x64-gnu || true
 
       - name: Run Unit Tests
         run: npm test
