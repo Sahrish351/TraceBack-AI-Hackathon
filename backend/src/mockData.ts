@@ -414,9 +414,9 @@ WHERE po.po_id = 'PO-1042';
     invoiceUnitPrice: 0,
     contractUnitPrice: 0,
     fees: 0,
-    taxRate: 0.04526, // Approx 4.5% statutory VAT/Sales Tax
-    taxAmount: 4120,
-    totalAmount: 95140,
+    taxRate: 0.05,
+    taxAmount: 1251.50,
+    totalAmount: 26281.50,
     orderDate: "2026-10-18",
     deliveryDate: "2026-10-23",
     invoiceDate: "2026-10-28",
@@ -424,16 +424,16 @@ WHERE po.po_id = 'PO-1042';
     invoiceId: "INV/2025/10/0003",
     deliveryId: "DN-2025-089",
     financialSummary: {
-      subtotal: 91020,
-      taxRate: 0.04526,
-      taxAmount: 4120,
-      totalAmount: 95140,
+      subtotal: 25030,
+      taxRate: 0.05,
+      taxAmount: 1251.50,
+      totalAmount: 26281.50,
       currency: "USD",
-      calculatedSubtotal: 91020,
-      calculatedTax: 4120,
-      calculatedTotal: 95140,
+      calculatedSubtotal: 25030,
+      calculatedTax: 1251.50,
+      calculatedTotal: 26281.50,
       taxDiscrepancy: 0,
-      formula: "Subtotal ($91,020.00) + Tax ($4,120.00) = $95,140.00"
+      formula: "Subtotal ($25,030.00) + Tax ($1,251.50) = $26,281.50"
     },
     lineItems: [
       {

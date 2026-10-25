@@ -29,9 +29,9 @@ describe("TraceBack AI — Zetaris Data Virtualization Adapter Suite (Phase 5 St
     expect(record.supplierId).toBe("Lita Co., Ltd. (Braintec)");
     expect(record.lineItems).toBeDefined();
     expect(record.lineItems?.length).toBe(5);
-    expect(record.financialSummary?.subtotal).toBe(91020);
-    expect(record.financialSummary?.taxAmount).toBe(4120);
-    expect(record.financialSummary?.totalAmount).toBe(95140);
+    expect(record.financialSummary?.subtotal).toBe(25030);
+    expect(record.financialSummary?.taxAmount).toBe(1251.50);
+    expect(record.financialSummary?.totalAmount).toBe(26281.50);
   });
 
   it("should report Not Configured status honestly when live credentials are absent", async () => {
