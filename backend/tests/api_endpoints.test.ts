@@ -101,4 +101,11 @@ describe("TraceBack AI — Runtime API Endpoints Suite", () => {
     expect(Array.isArray(data.rows)).toBe(true);
     expect(data.rows.length).toBeGreaterThan(0);
   });
+
+  it("GET /api/raw-source/:file should reject path traversal and non-whitelisted files with 400", async () => {
+    const res = await fetch(`${baseUrl}/raw-source/unauthorized_file.env`);
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error).toBe("Invalid file request");
+  });
 });

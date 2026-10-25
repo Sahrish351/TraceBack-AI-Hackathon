@@ -121,3 +121,23 @@ UI polish and transparency safeguards were verified and enhanced across all appl
 3. **Responsive Navigation & State Preservation:** Verified desktop sidebar collapsible behavior and mobile responsive views for table grids and evidence cards.
 4. **Transparent Terminology:** Verified that all discrepancy labels state *"Potential Discrepancy — Requires Human Review"* with zero accusations of fraud.
 5. **Human Review Actions:** Review decisions (`approve`, `reject`, `request_clarification`) cleanly record reviewer identity, timestamp, and audit notes into H-MEM storage.
+
+
+---
+
+## 6. Milestone 5 — Final Test & Security Audit
+
+A security and integrity audit of the entire repository was performed:
+1. **Zero Secret Exposure:**
+   - Automated regular-expression scan across all tracked files for API keys (`nvapi-`, `ghp_`, `sk-`, JWTs, passwords) confirmed **0 exposed secrets**.
+   - Verified that `.env` is listed in `.gitignore` and only `.env.example` with empty template keys is tracked.
+2. **Path Traversal Protection:**
+   - Source inspection endpoint `/api/raw-source/:file` enforces a strict whitelist (`purchase_orders.csv`, `deliveries.csv`, `invoices.csv`, `contract_prices.csv`), preventing directory traversal.
+   - Added automated regression test verifying that unauthorized paths return HTTP 400 (`Invalid file request`).
+3. **Zod Input Schema Validation:**
+   - Review endpoint `/api/review/:poId` enforces strict enum values (`approve`, `reject`, `request_clarification`) and character length bounds.
+   - Custom audit endpoint `/api/audit-custom` guards against negative numbers and invalid data shapes.
+4. **Resilience to External Outages:**
+   - All sponsor adapters (Zetaris, Meterless, NVIDIA NIM) implement timeout controls (`AbortSignal.timeout`) and fallback gracefully to deterministic local execution without throwing uncaught exceptions or crashing the server.
+5. **Final Test Metrics:**
+   - **45 / 45 tests passing** across 5 suites (`compare.test.ts`, `zetaris.test.ts`, `meterless.test.ts`, `nvidia.test.ts`, `api_endpoints.test.ts`).
