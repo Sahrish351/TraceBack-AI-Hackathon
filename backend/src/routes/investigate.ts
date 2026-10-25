@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { MeterlessMission, hMem } from "../meterless/MeterlessMission.js";
@@ -134,6 +135,18 @@ router.post("/investigate/:poId", async (req: Request, res: Response) => {
 
     const result = await mission.run(poId);
 
+    // Append to audit log
+    const statusLabel = result.summary.status === "CLEAN" ? "Clean" : "Flagged for Review";
+    hMem.appendAuditLog({
+      type: "investigation",
+      title: `${poId} Investigation Run`,
+      description: `Reconciled ${poId} across 4 data sources. Status: ${result.summary.status}. Total variance: ${result.summary.currency} ${result.summary.totalFinancialImpact}.`,
+      status: statusLabel,
+      actor: "TraceBack AI Agent",
+      poId,
+      meta: { totalFinancialImpact: result.summary.totalFinancialImpact, discrepancyCount: result.discrepancies.length }
+    });
+
     // Retrieve previous human reviewer decision from H-MEM if exists
     const existingDecision = hMem.get(`review:${poId}`);
 
@@ -225,9 +238,10 @@ router.post("/review/:poId", (req: Request, res: Response) => {
   }
 
   const { action, reviewer, notes } = parseResult.data;
+  const effectiveReviewer = (req as any).user?.name || reviewer || "Lead Auditor Sahrish";
   const decision = {
     action,
-    reviewer,
+    reviewer: effectiveReviewer,
     notes: notes || "",
     timestamp: new Date().toISOString(),
     poId
@@ -236,7 +250,25 @@ router.post("/review/:poId", (req: Request, res: Response) => {
   // Commit decision to H-MEM
   hMem.set(`review:${poId}`, decision);
 
-  logger.info(`[Human-in-Loop] Review recorded for ${poId}: ${action.toUpperCase()} by ${reviewer}`);
+  // Append audit event
+  const statusLabel =
+    action === "approve"
+      ? "Approved"
+      : action === "reject"
+      ? "Rejected"
+      : "Clarification Requested";
+
+  hMem.appendAuditLog({
+    type: "review",
+    title: `Review Decision on ${poId}: ${action.toUpperCase()}`,
+    description: `Auditor recorded ${action.toUpperCase()}: "${notes || "No additional reviewer comments."}"`,
+    status: statusLabel,
+    actor: effectiveReviewer,
+    poId,
+    meta: { action, notes }
+  });
+
+  logger.info(`[Human-in-Loop] Review recorded for ${poId}: ${action.toUpperCase()} by ${effectiveReviewer}`);
 
   res.json({
     success: true,
@@ -494,4 +526,99 @@ router.post("/custom-audit", async (req: Request, res: Response) => {
   } catch (err: any) {
     res.status(500).json({ error: "Custom audit simulation failed", message: err.message });
   }
+});
+
+/**
+ * GET /api/audit-logs
+ * Retrieves chronological audit history of investigations and human reviews.
+ */
+router.get("/audit-logs", (_req: Request, res: Response) => {
+  const logs = hMem.getAuditLogs();
+  res.json({ logs });
+});
+
+/**
+ * GET /api/export-report/:poId
+ * Generates an official downloadable compliance certificate and investigation report.
+ */
+router.get("/export-report/:poId", async (req: Request, res: Response) => {
+  const poId = req.params.poId?.toUpperCase().trim();
+  if (!poId) {
+    return res.status(400).json({ error: "PO ID is required" });
+  }
+
+  try {
+    const mission = new MeterlessMission();
+    const result = await mission.run(poId);
+    const decision = hMem.get(`review:${poId}`) || {
+      action: "pending",
+      reviewer: "Unassigned",
+      timestamp: new Date().toISOString()
+    };
+
+    const report = {
+      certificateNumber: `TB-CERT-${poId}-${new Date().toISOString().substring(0, 10).replace(/-/g, "")}`,
+      generatedAt: new Date().toISOString(),
+      platform: "TraceBack AI Autonomous 4-Way Reconciliation Platform",
+      track: "The Agent That Can Explain Why (Hackathon 2026)",
+      investigationScope: {
+        poId: result.unifiedRecord.poId,
+        supplierId: result.unifiedRecord.supplierId,
+        item: result.unifiedRecord.item,
+        currency: result.unifiedRecord.currency,
+        orderedQty: result.unifiedRecord.orderedQty,
+        deliveredQty: result.unifiedRecord.deliveredQty,
+        invoicedQty: result.unifiedRecord.invoicedQty,
+        agreedUnitPrice: result.unifiedRecord.contractUnitPrice,
+        invoiceUnitPrice: result.unifiedRecord.invoiceUnitPrice
+      },
+      auditSummary: {
+        status: result.summary.status,
+        discrepancyCount: result.discrepancies.length,
+        totalFinancialImpact: result.summary.totalFinancialImpact,
+        currency: result.summary.currency,
+        confidenceScore: result.summary.confidenceScore
+      },
+      findings: result.discrepancies.map((d) => ({
+        id: d.id,
+        type: d.type,
+        severity: d.severity,
+        financialImpact: d.financialImpact,
+        delta: d.delta,
+        reason: d.reason,
+        formula: d.calculation?.formula,
+        sourceA: d.sourceA,
+        sourceB: d.sourceB
+      })),
+      humanReview: {
+        decisionStatus: decision.action,
+        reviewedBy: decision.reviewer,
+        timestamp: decision.timestamp,
+        notes: decision.notes
+      },
+      verificationProof: {
+        dataVirtualizationEngine: "Zetaris SQLite In-Memory Federated Join",
+        agentOrchestrator: "Meterless 5-Step Autonomous Relay + H-MEM",
+        explainerEngine: result.explanation.modelUsed,
+        sha256VerificationHash: crypto.createHash("sha256").update(JSON.stringify(result.summary)).digest("hex")
+      }
+    };
+
+    res.setHeader("Content-Disposition", `attachment; filename="audit-report-${poId}.json"`);
+    res.setHeader("Content-Type", "application/json");
+    res.json(report);
+  } catch (err: any) {
+    logger.error({ err, poId }, "Failed to generate export report");
+    res.status(500).json({ error: "Failed to generate report", message: err.message });
+  }
+});
+
+/**
+ * POST /api/reset-session
+ * Resets transient reviewer actions and restores pristine fixtures.
+ */
+router.post("/reset-session", (_req: Request, res: Response) => {
+  hMem.reset();
+  logger.info("[Reset] H-MEM session state reset to clean benchmark defaults");
+  res.json({ success: true, message: "Session state reset to clean benchmark defaults" });
 });

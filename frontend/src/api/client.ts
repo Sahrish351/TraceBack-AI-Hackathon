@@ -5,7 +5,9 @@ import {
   CsvFileDump,
   ReviewDecision,
   BatchAuditResult,
-  CustomAuditParams
+  CustomAuditParams,
+  AuditLogEntry,
+  UserProfile
 } from "../types";
 
 const BASE_URL = "/api";
@@ -1740,4 +1742,125 @@ export async function runCustomAudit(params: CustomAuditParams): Promise<Investi
     },
     reviewDecision: { action: "pending", reviewer: "Unassigned", timestamp: new Date().toISOString() }
   };
+}
+
+export async function fetchAuditLogs(): Promise<AuditLogEntry[]> {
+  try {
+    const res = await fetch(`${BASE_URL}/audit-logs`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.logs)) return data.logs;
+    }
+  } catch {}
+  return [
+    {
+      id: "LOG-INIT-1042",
+      type: "investigation",
+      title: "PO-1042 / INV-7781 Investigation Run",
+      description: "4-way reconciliation completed across ERP, WMS, and Billing for Northstar Office Supplies.",
+      status: "Flagged for Review",
+      actor: "System Agent (Meterless)",
+      poId: "PO-1042",
+      timestamp: new Date(Date.now() - 3600000 * 4).toISOString()
+    },
+    {
+      id: "LOG-INIT-2005",
+      type: "investigation",
+      title: "PO-2005 Multi-Item Consignment Audit",
+      description: "Reconciled 5 line items for Lita Co. (Braintec). Flagged $3,150 potential variance.",
+      status: "Flagged for Review",
+      actor: "System Agent (Meterless)",
+      poId: "PO-2005",
+      timestamp: new Date(Date.now() - 3600000 * 8).toISOString()
+    },
+    {
+      id: "LOG-INIT-1002",
+      type: "investigation",
+      title: "PO-1002 Clean Concordance Verification",
+      description: "Zero discrepancies observed across 50 units. Approved for disbursement.",
+      status: "Clean",
+      actor: "System Agent (Meterless)",
+      poId: "PO-1002",
+      timestamp: new Date(Date.now() - 3600000 * 24).toISOString()
+    }
+  ];
+}
+
+export async function fetchCurrentUser(): Promise<UserProfile> {
+  try {
+    const res = await fetch(`${BASE_URL}/auth/me`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.user) return data.user;
+    }
+  } catch {}
+  return {
+    id: "usr-001",
+    email: "sahrish@traceback.ai",
+    name: "Sahrish",
+    role: "Lead Auditor",
+    avatar: "SA",
+    department: "Procurement Internal Audit",
+    permissions: ["read", "review:approve", "review:reject", "review:request_info", "export", "configure"]
+  };
+}
+
+export async function fetchPersonas(): Promise<UserProfile[]> {
+  try {
+    const res = await fetch(`${BASE_URL}/auth/personas`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.personas)) return data.personas;
+    }
+  } catch {}
+  return [
+    {
+      id: "usr-001",
+      email: "sahrish@traceback.ai",
+      name: "Sahrish",
+      role: "Lead Auditor",
+      avatar: "SA",
+      department: "Procurement Internal Audit",
+      permissions: ["read", "review:approve", "review:reject", "review:request_info", "export", "configure"]
+    },
+    {
+      id: "usr-002",
+      email: "analyst@traceback.ai",
+      name: "Alex Chen",
+      role: "AP Compliance Analyst",
+      avatar: "AC",
+      department: "Accounts Payable Compliance",
+      permissions: ["read", "review:request_info", "export"]
+    },
+    {
+      id: "usr-003",
+      email: "observer@traceback.ai",
+      name: "Guest Observer",
+      role: "Read-Only Auditor",
+      avatar: "GO",
+      department: "External Compliance Oversight",
+      permissions: ["read", "export"]
+    }
+  ];
+}
+
+export async function switchPersona(userId: string): Promise<UserProfile> {
+  try {
+    const res = await fetch(`${BASE_URL}/auth/switch-persona/${userId}`, { method: "POST" });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.user) return data.user;
+    }
+  } catch {}
+  const personas = await fetchPersonas();
+  return personas.find((p) => p.id === userId) || personas[0];
+}
+
+export async function resetSessionState(): Promise<boolean> {
+  try {
+    const res = await fetch(`${BASE_URL}/reset-session`, { method: "POST" });
+    return res.ok;
+  } catch {
+    return true;
+  }
 }

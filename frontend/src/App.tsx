@@ -4,13 +4,20 @@ import {
   fetchPurchaseOrders,
   investigatePo,
   submitReview,
-  runCustomAudit
+  runCustomAudit,
+  fetchAuditLogs,
+  fetchCurrentUser,
+  fetchPersonas,
+  switchPersona,
+  resetSessionState
 } from "./api/client";
 import {
   InvestigationResult,
   PurchaseOrderItem,
   SystemHealth,
-  CustomAuditParams
+  CustomAuditParams,
+  AuditLogEntry,
+  UserProfile
 } from "./types";
 import { LandingPage } from "./components/LandingPage";
 import { Sidebar, WorkspaceView } from "./components/Sidebar";
@@ -22,13 +29,19 @@ import { HumanReviewScreen } from "./components/HumanReviewScreen";
 import { IntegrationsScreen } from "./components/IntegrationsScreen";
 import { SourceModal } from "./components/SourceModal";
 import { NewInvestigationModal } from "./components/NewInvestigationModal";
+import { AuditCertificateModal } from "./components/AuditCertificateModal";
+import { AuditorProfileModal } from "./components/AuditorProfileModal";
 import {
   History,
   Settings,
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
-  FileText
+  FileText,
+  RotateCcw,
+  User,
+  Filter,
+  Check
 } from "lucide-react";
 
 export const App: React.FC = () => {
@@ -45,8 +58,19 @@ export const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
+  // Audit Logs State
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [auditLogFilter, setAuditLogFilter] = useState<"all" | "investigation" | "review">("all");
+
+  // User & Persona State
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [personas, setPersonas] = useState<UserProfile[]>([]);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
   // Modals
   const [isNewInvestigationOpen, setIsNewInvestigationOpen] = useState(false);
+  const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [sourceModal, setSourceModal] = useState<{
     isOpen: boolean;
     file: string;
@@ -57,7 +81,7 @@ export const App: React.FC = () => {
     file: "purchase_orders.csv"
   });
 
-  // Load initial health & purchase orders list
+  // Load initial health, purchase orders list, audit logs, & user profile
   useEffect(() => {
     fetchHealth()
       .then(setSystemHealth)
@@ -68,6 +92,18 @@ export const App: React.FC = () => {
         setPurchaseOrders(pos);
       })
       .catch((err) => console.error("PO list error:", err));
+
+    fetchAuditLogs()
+      .then(setAuditLogs)
+      .catch((err) => console.error("Audit logs error:", err));
+
+    fetchCurrentUser()
+      .then(setCurrentUser)
+      .catch((err) => console.error("Current user error:", err));
+
+    fetchPersonas()
+      .then(setPersonas)
+      .catch((err) => console.error("Personas error:", err));
   }, []);
 
   // Run investigation whenever selected PO changes
@@ -103,6 +139,7 @@ export const App: React.FC = () => {
   ) => {
     if (!investigation) return;
     try {
+      const reviewerName = currentUser ? `${currentUser.name} (${currentUser.role})` : "Lead Auditor Sahrish";
       const res = await submitReview(investigation.poId, action, notes);
       if (res.success && res.decision) {
         setInvestigation({
@@ -110,6 +147,8 @@ export const App: React.FC = () => {
           reviewDecision: res.decision
         });
       }
+      // Refresh audit logs
+      fetchAuditLogs().then(setAuditLogs);
     } catch (err) {
       console.error("Failed to submit review:", err);
     }
@@ -123,10 +162,34 @@ export const App: React.FC = () => {
       setSelectedPoId(params.poId);
       setWorkspaceView("investigations");
       setIsReviewing(false);
+      fetchAuditLogs().then(setAuditLogs);
     } catch (err) {
       console.error("Custom audit failed:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSelectPersona = async (personaId: string) => {
+    try {
+      const user = await switchPersona(personaId);
+      setCurrentUser(user);
+    } catch (err) {
+      console.error("Failed to switch persona:", err);
+    }
+  };
+
+  const handleResetSession = async () => {
+    setResetting(true);
+    try {
+      await resetSessionState();
+      await runInvestigation(selectedPoId);
+      const logs = await fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (err) {
+      console.error("Reset failed:", err);
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -139,6 +202,12 @@ export const App: React.FC = () => {
       />
     );
   }
+
+  const filteredLogs = auditLogs.filter((log) => {
+    if (auditLogFilter === "investigation") return log.type === "investigation";
+    if (auditLogFilter === "review") return log.type === "review";
+    return true;
+  });
 
   return (
     <div className="flex h-screen bg-[#FAF8F3] text-[#202720] overflow-hidden selection:bg-[#246B52] selection:text-white font-sans">
@@ -168,6 +237,8 @@ export const App: React.FC = () => {
           onSearchChange={setSearchQuery}
           systemHealth={systemHealth}
           onOpenIntegrations={() => setWorkspaceView("integrations")}
+          currentUser={currentUser}
+          onOpenProfile={() => setIsProfileModalOpen(true)}
         />
 
         {/* Content View Router */}
@@ -200,6 +271,7 @@ export const App: React.FC = () => {
                 onBack={() => setWorkspaceView("dashboard")}
                 onOpenReview={() => setIsReviewing(true)}
                 onViewSourceFile={(file) => setSourceModal({ isOpen: true, file })}
+                onOpenCertificate={() => setIsCertificateModalOpen(true)}
               />
             ) : null
           ) : workspaceView === "new-investigation" ? (
@@ -215,67 +287,170 @@ export const App: React.FC = () => {
               onRefresh={() => runInvestigation(selectedPoId)}
             />
           ) : workspaceView === "audit-log" ? (
-            <div className="p-8 max-w-5xl mx-auto space-y-6">
-              <div>
-                <h1 className="font-serif text-3xl font-bold text-[#143D2F]">Audit Log & History</h1>
-                <p className="text-xs text-[#667066] mt-1">
-                  Immutable record of investigation runs, data virtualization queries, and human reviewer decisions.
-                </p>
+            <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6 w-full">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h1 className="font-serif text-3xl font-bold text-[#143D2F]">Audit Log & History</h1>
+                  <p className="text-xs text-[#667066] mt-1">
+                    Immutable record of investigation runs, data virtualization queries, and human reviewer decisions.
+                  </p>
+                </div>
+
+                {/* Filter Pills */}
+                <div className="flex items-center space-x-1.5 bg-white p-1 rounded-lg border border-[#E5E7E2] text-xs">
+                  {(["all", "investigation", "review"] as const).map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setAuditLogFilter(filter)}
+                      className={`px-3 py-1 rounded-md font-medium transition capitalize ${
+                        auditLogFilter === filter
+                          ? "bg-[#246B52] text-white shadow-sm"
+                          : "text-[#667066] hover:text-[#143D2F]"
+                      }`}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-[#E5E7E2] shadow-card divide-y divide-[#E5E7E2]">
-                <div className="p-4 flex items-center justify-between text-xs">
-                  <div>
-                    <span className="font-semibold text-[#143D2F]">PO-1042 / INV-7781 Investigation Run</span>
-                    <p className="text-[11px] text-[#667066]">4-way reconciliation completed across ERP, WMS, and Billing</p>
-                  </div>
-                  <span className="text-[11px] text-[#246B52] font-semibold bg-[#EAF3ED] px-2 py-0.5 rounded">
-                    Verified
-                  </span>
-                </div>
+              {/* Dynamic Audit Events List */}
+              <div className="bg-white rounded-xl border border-[#E5E7E2] shadow-card divide-y divide-[#E5E7E2] overflow-hidden">
+                {filteredLogs.length > 0 ? (
+                  filteredLogs.map((entry) => {
+                    const isApproved = entry.status === "Approved" || entry.status === "Clean";
+                    const isFlagged = entry.status === "Flagged for Review" || entry.status === "Rejected";
 
-                <div className="p-4 flex items-center justify-between text-xs">
-                  <div>
-                    <span className="font-semibold text-[#143D2F]">PO-1001 Audit Completed</span>
-                    <p className="text-[11px] text-[#667066]">Detected $1,200 total variance across quantity overbill & price escalation</p>
-                  </div>
-                  <span className="text-[11px] text-[#C66A4A] font-semibold bg-[#FDF1ED] px-2 py-0.5 rounded">
-                    Flagged for Review
-                  </span>
-                </div>
+                    return (
+                      <div key={entry.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:bg-[#FAF8F3]/50 transition">
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-semibold text-[#143D2F] text-sm">{entry.title}</span>
+                            <span className="text-[10px] text-[#8F9A8F] font-mono">
+                              {entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString() : ""}
+                            </span>
+                          </div>
+                          <p className="text-[#667066] text-xs">{entry.description}</p>
+                          <div className="flex items-center space-x-2 text-[11px] text-[#8F9A8F] pt-0.5">
+                            <span>Actor: <strong className="text-[#143D2F]">{entry.actor}</strong></span>
+                            {entry.poId && (
+                              <>
+                                <span>•</span>
+                                <button
+                                  onClick={() => handleSelectPo(entry.poId!)}
+                                  className="text-[#246B52] hover:underline font-semibold"
+                                >
+                                  View {entry.poId}
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
 
-                <div className="p-4 flex items-center justify-between text-xs">
-                  <div>
-                    <span className="font-semibold text-[#143D2F]">PO-1002 Clean Concordance</span>
-                    <p className="text-[11px] text-[#667066]">Zero discrepancies observed. Approved for disbursement</p>
+                        <span
+                          className={`text-xs font-semibold px-2.5 py-1 rounded-lg border shrink-0 ${
+                            isApproved
+                              ? "bg-[#EAF3ED] text-[#246B52] border-[#DCEBE1]"
+                              : isFlagged
+                              ? "bg-[#FDF1ED] text-[#C66A4A] border-[#F3C5B5]"
+                              : "bg-[#FAF8F3] text-[#143D2F] border-[#E5E7E2]"
+                          }`}
+                        >
+                          {entry.status}
+                        </span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="p-8 text-center text-xs text-[#667066]">
+                    No audit records match the selected filter.
                   </div>
-                  <span className="text-[11px] text-[#246B52] font-semibold bg-[#EAF3ED] px-2 py-0.5 rounded">
-                    Clean
-                  </span>
-                </div>
+                )}
               </div>
             </div>
           ) : workspaceView === "settings" ? (
-            <div className="p-8 max-w-4xl mx-auto space-y-6">
+            <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6 w-full">
               <div>
                 <h1 className="font-serif text-3xl font-bold text-[#143D2F]">Application Settings</h1>
                 <p className="text-xs text-[#667066] mt-1">
-                  Configuration, data storage paths, and environment settings.
+                  Active auditor session, data persistence paths, and demo state controls.
                 </p>
               </div>
 
+              {/* Active Profile Card */}
+              {currentUser && (
+                <div className="bg-white p-6 rounded-xl border border-[#E5E7E2] shadow-card space-y-4 text-xs">
+                  <div className="flex items-center justify-between border-b border-[#E5E7E2] pb-3">
+                    <span className="font-serif text-base font-bold text-[#143D2F]">Active Auditor Session</span>
+                    <button
+                      onClick={() => setIsProfileModalOpen(true)}
+                      className="text-xs text-[#246B52] font-semibold hover:underline"
+                    >
+                      Switch Persona
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <span className="text-[#8F9A8F] block">Auditor Name</span>
+                      <strong className="text-[#143D2F] text-sm">{currentUser.name}</strong>
+                    </div>
+                    <div>
+                      <span className="text-[#8F9A8F] block">Designated Role</span>
+                      <strong className="text-[#143D2F] text-sm">{currentUser.role}</strong>
+                    </div>
+                    <div>
+                      <span className="text-[#8F9A8F] block">Department</span>
+                      <strong className="text-[#143D2F] text-sm">{currentUser.department}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* System Infrastructure Details */}
               <div className="bg-white p-6 rounded-xl border border-[#E5E7E2] shadow-card space-y-4 text-xs">
-                <div className="space-y-1">
-                  <span className="font-semibold text-[#143D2F]">Data Source Location</span>
-                  <p className="text-[#667066]">Normalized CSV tables loaded from: <code>./data/*.csv</code></p>
+                <span className="font-serif text-base font-bold text-[#143D2F] block border-b border-[#E5E7E2] pb-3">
+                  System & Storage Architecture
+                </span>
+
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <span className="font-semibold text-[#143D2F]">Persistent H-MEM Store</span>
+                    <p className="text-[#667066]">
+                      Human reviews and audit traces saved to: <code>./data/.h_mem_store.json</code> (survives server restart).
+                    </p>
+                  </div>
+                  <div className="space-y-1 border-t border-[#E5E7E2] pt-3">
+                    <span className="font-semibold text-[#143D2F]">Normalized Procurement Datasets</span>
+                    <p className="text-[#667066]">
+                      Virtual schema federated from: <code>./data/purchase_orders.csv, deliveries.csv, invoices.csv</code>
+                    </p>
+                  </div>
+                  <div className="space-y-1 border-t border-[#E5E7E2] pt-3">
+                    <span className="font-semibold text-[#143D2F]">Backend API Service</span>
+                    <p className="text-[#667066]">
+                      Express microservice listening on <code>http://localhost:4000/api</code>
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-1 border-t border-[#E5E7E2] pt-3">
-                  <span className="font-semibold text-[#143D2F]">Backend API Port</span>
-                  <p className="text-[#667066]">Listening on: <code>http://localhost:4000/api</code></p>
-                </div>
-                <div className="space-y-1 border-t border-[#E5E7E2] pt-3">
-                  <span className="font-semibold text-[#143D2F]">Active Track</span>
-                  <p className="text-[#667066]">The Agent That Can Explain Why (Hackathon 2026)</p>
+              </div>
+
+              {/* Reset Demo Session Control */}
+              <div className="bg-white p-6 rounded-xl border border-[#F3C5B5] shadow-card space-y-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-serif text-base font-bold text-[#C66A4A]">Reset Demo Session Data</h4>
+                    <p className="text-xs text-[#667066] mt-0.5">
+                      Clear transient reviewer approvals/rejections and re-initialize pristine hackathon benchmark cases.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleResetSession}
+                    disabled={resetting}
+                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-lg bg-[#FAF8F3] hover:bg-[#FDF1ED] text-[#C66A4A] border border-[#F3C5B5] font-semibold transition shadow-sm disabled:opacity-50"
+                  >
+                    <RotateCcw className={`w-3.5 h-3.5 ${resetting ? "animate-spin" : ""}`} />
+                    <span>{resetting ? "Resetting..." : "Reset Session"}</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -297,6 +472,27 @@ export const App: React.FC = () => {
         onClose={() => setIsNewInvestigationOpen(false)}
         onSubmit={handleCustomAuditSubmit}
       />
+
+      {investigation && (
+        <AuditCertificateModal
+          isOpen={isCertificateModalOpen}
+          onClose={() => setIsCertificateModalOpen(false)}
+          investigation={investigation}
+        />
+      )}
+
+      {currentUser && (
+        <AuditorProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          currentUser={currentUser}
+          personas={personas}
+          onSelectPersona={handleSelectPersona}
+          onLogout={() => {
+            setCurrentUser(personas[2] || currentUser);
+          }}
+        />
+      )}
     </div>
   );
 };

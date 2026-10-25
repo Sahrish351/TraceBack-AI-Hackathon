@@ -3,6 +3,7 @@ import cors from "cors";
 import { config, logSystemModes } from "./config.js";
 import { logger } from "./utils/logger.js";
 import { router as investigateRouter } from "./routes/investigate.js";
+import { authRouter } from "./routes/auth.js";
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use((req, _res, next) => {
 });
 
 // Mount API routes
+app.use("/api/auth", authRouter);
 app.use("/api", investigateRouter);
 
 // Root informational endpoint
