@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { X, FileSpreadsheet, Eye, Info, Database } from "lucide-react";
+import { X, FileSpreadsheet, Eye, Info, Database, ExternalLink } from "lucide-react";
 import { fetchRawSource } from "../api/client";
 import { CsvFileDump } from "../types";
 
@@ -48,7 +48,7 @@ export const SourceModal: React.FC<SourceModalProps> = ({
         if (isMounted) setFileData(data);
       })
       .catch((err) => {
-        if (isMounted) setError(err.message);
+        if (isMounted) setError(err.message || "Failed to load CSV source file.");
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -62,45 +62,42 @@ export const SourceModal: React.FC<SourceModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-        {/* Modal Header */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-850/80">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#143D2F]/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl border border-[#E5E7E2] shadow-modal w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="p-5 border-b border-[#E5E7E2] flex items-center justify-between bg-[#FAF8F3]/50">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            <div className="w-9 h-9 rounded-lg bg-[#EAF3ED] text-[#246B52] flex items-center justify-center">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                Raw Virtualized Data Viewer
-                <span className="text-xs font-mono font-normal text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                  {activeFile}
-                </span>
+              <h2 className="font-serif text-lg font-bold text-[#143D2F]">
+                Source Record Inspector
               </h2>
-              <p className="text-xs text-slate-400">
-                Ground-truth audit proof from the underlying data source
+              <p className="text-xs text-[#667066]">
+                Inspect normalized ground-truth CSV lines federated by the virtualization layer.
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
+            className="p-1.5 rounded-lg text-[#8F9A8F] hover:text-[#143D2F] hover:bg-[#FAF8F3] transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* File Tabs */}
-        <div className="flex items-center space-x-2 px-4 py-2 border-b border-slate-800 bg-slate-900/60 overflow-x-auto">
+        {/* Tab Selector */}
+        <div className="px-6 py-2.5 bg-[#FAF8F3] border-b border-[#E5E7E2] flex items-center space-x-2 overflow-x-auto">
           {availableFiles.map((f) => (
             <button
               key={f.name}
               onClick={() => setActiveFile(f.name)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                 activeFile === f.name
-                  ? "bg-indigo-600 text-white shadow"
-                  : "bg-slate-800/80 text-slate-300 hover:bg-slate-700/80"
+                  ? "bg-[#246B52] text-white shadow-sm font-semibold"
+                  : "bg-white text-[#667066] border border-[#E5E7E2] hover:bg-[#EAF3ED] hover:text-[#143D2F]"
               }`}
             >
               {f.label}
@@ -108,110 +105,74 @@ export const SourceModal: React.FC<SourceModalProps> = ({
           ))}
         </div>
 
-        {/* Modal Body / Table View */}
-        <div className="flex-1 overflow-auto p-4">
+        {/* Table Content */}
+        <div className="flex-1 overflow-auto p-6">
           {loading ? (
-            <div className="py-16 text-center space-y-2">
-              <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-xs text-slate-400">Loading virtualized source data...</p>
+            <div className="flex items-center justify-center py-12 text-xs text-[#667066]">
+              <span>Loading raw file data...</span>
             </div>
           ) : error ? (
-            <div className="p-6 text-center text-rose-400 text-sm">
-              Failed to load source file: {error}
+            <div className="p-4 rounded-lg bg-[#FDF1ED] text-[#C66A4A] text-xs">
+              {error}
             </div>
           ) : fileData ? (
-            <div className="space-y-3">
-              {/* Highlight Legend */}
-              {highlightRow && (
-                <div className="flex items-center justify-between text-xs bg-indigo-950/30 border border-indigo-500/20 px-3 py-2 rounded-xl text-indigo-300">
-                  <div className="flex items-center space-x-2">
-                    <Info className="w-4 h-4 text-indigo-400 shrink-0" />
-                    <span>
-                      Evidence Citation: Citing Line{" "}
-                      <strong className="text-white font-mono">L{highlightRow}</strong>
-                      {highlightColumn && (
-                        <span>
-                          , Column <strong className="text-white font-mono">[{highlightColumn}]</strong>
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  <span className="text-[11px] font-mono bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded">
-                    Highlighted Row
-                  </span>
-                </div>
-              )}
-
-              {/* Data Table */}
-              <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950/50">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-800 bg-slate-850/90 text-slate-400 font-mono">
-                      <th className="py-2.5 px-3 border-r border-slate-800 w-16 text-center">
-                        Row #
+            <div className="border border-[#E5E7E2] rounded-xl overflow-hidden shadow-card">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-[#FAF8F3] border-b border-[#E5E7E2] font-semibold text-[#667066] uppercase">
+                    <th className="py-2.5 px-4 w-14 text-center">Row</th>
+                    {fileData.headers.map((h) => (
+                      <th
+                        key={h}
+                        className={`py-2.5 px-4 font-mono ${
+                          h === highlightColumn ? "text-[#C66A4A] bg-[#FDF1ED]" : ""
+                        }`}
+                      >
+                        {h}
                       </th>
-                      {fileData.headers.map((h) => (
-                        <th
-                          key={h}
-                          className={`py-2.5 px-3 border-r border-slate-800 font-semibold ${
-                            h === highlightColumn ? "text-indigo-400 bg-indigo-950/40" : "text-slate-300"
-                          }`}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {fileData.rows.map((row) => {
-                      const isHighlightedRow = row.rowNumber === highlightRow;
-
-                      return (
-                        <tr
-                          key={row.rowNumber}
-                          className={`border-b border-slate-800/60 font-mono transition ${
-                            isHighlightedRow
-                              ? "bg-indigo-950/40 text-white font-medium ring-1 ring-inset ring-indigo-500/40"
-                              : "hover:bg-slate-850/40 text-slate-300"
-                          }`}
-                        >
-                          <td className="py-2.5 px-3 border-r border-slate-800 text-center text-slate-400 font-bold">
-                            {row.rowNumber}
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E5E7E2]">
+                  {fileData.rows.map((row) => {
+                    const isHighlightedRow = row.rowNumber === highlightRow;
+                    return (
+                      <tr
+                        key={row.rowNumber}
+                        className={`font-mono transition ${
+                          isHighlightedRow ? "bg-[#FDF1ED] font-semibold" : "hover:bg-[#FAF8F3]/60"
+                        }`}
+                      >
+                        <td className="py-2 px-4 text-center text-[#8F9A8F] bg-[#FAF8F3]">
+                          {row.rowNumber}
+                        </td>
+                        {fileData.headers.map((h) => (
+                          <td
+                            key={h}
+                            className={`py-2 px-4 ${
+                              isHighlightedRow && h === highlightColumn
+                                ? "text-[#C66A4A] font-bold underline"
+                                : "text-[#202720]"
+                            }`}
+                          >
+                            {row.values[h] ?? "-"}
                           </td>
-                          {fileData.headers.map((h) => {
-                            const isHighlightedCell = isHighlightedRow && h === highlightColumn;
-
-                            return (
-                              <td
-                                key={h}
-                                className={`py-2.5 px-3 border-r border-slate-800/80 ${
-                                  isHighlightedCell
-                                    ? "bg-indigo-600/30 text-indigo-200 font-bold outline outline-1 outline-indigo-400"
-                                    : ""
-                                }`}
-                              >
-                                {row.values[h] ?? "-"}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           ) : null}
         </div>
 
-        {/* Modal Footer */}
-        <div className="p-3 border-t border-slate-800 bg-slate-850/80 flex items-center justify-between text-xs text-slate-400">
-          <span className="flex items-center gap-1.5 font-mono">
-            <Database className="w-3.5 h-3.5 text-cyan-400" /> Virtualized via Zetaris Data Virtualization
-          </span>
+        {/* Footer */}
+        <div className="p-4 border-t border-[#E5E7E2] bg-[#FAF8F3]/50 flex items-center justify-between text-xs text-[#667066]">
+          <span>Source path: <code className="text-[#143D2F]">data/{activeFile}</code></span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition"
+            className="px-4 py-1.5 rounded-lg bg-[#246B52] hover:bg-[#1D5642] text-white font-medium shadow-sm transition"
           >
             Close
           </button>
