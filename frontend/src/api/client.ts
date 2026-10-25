@@ -287,34 +287,42 @@ const STATIC_CSV_DUMPS: Record<string, CsvFileDump> = {
 const STATIC_HEALTH: SystemHealth = {
   status: "ok",
   timestamp: new Date().toISOString(),
-  service: "TraceBack AI (GitHub Pages Live)",
+  service: "TraceBack AI (GitHub Pages Preview)",
   version: "1.0.0",
   hackathonWindow: "Oct 22–27, 2026",
   sponsorIntegrations: {
     zetaris: {
       layer: "Data Virtualization & Cross-Source Integration",
+      status: "Local / demo mode",
       mode: "mock",
-      engine: "Zetaris Cross-Source Virtualizer",
+      engine: "Zetaris Cross-Source In-Memory Virtualizer",
       latencyMs: 2,
       isLive: false,
-      endpoint: "in-memory-sqlite-virtualizer"
+      endpoint: "in-memory-sqlite-virtualizer",
+      reason: "Live Zetaris credentials unconfigured in client preview"
     },
     meterless: {
       layer: "Agent Mission Orchestration & H-MEM",
+      status: "Local / demo mode",
       mode: "local-orchestrator",
       isLive: false,
-      architecture: "Scout Intent -> Relay Execution -> H-MEM Session Memory"
+      architecture: "Scout Intent -> Relay Execution -> H-MEM Session Memory",
+      reason: "Local 5-step agent mission runner active"
     },
     nvidia: {
       layer: "Inference & Natural Language Generation",
+      status: "Local / demo mode",
       model: "meta/llama-3.1-8b-instruct",
       isLive: false,
-      mode: "deterministic-fallback"
+      mode: "deterministic-fallback",
+      reason: "Deterministic fallback engine running with verified arithmetic guardrails"
     },
     cursor: {
       layer: "Developer Velocity & AI Agent Pair Programming",
+      status: "Local / demo mode (Audit Logged)",
       promptsLogged: true,
-      documentationPath: "docs/CURSOR_USAGE.md"
+      documentationPath: "docs/CURSOR_USAGE.md",
+      note: "Cursor used for pair programming; prompt transcripts logged in docs/CURSOR_USAGE.md"
     }
   }
 };

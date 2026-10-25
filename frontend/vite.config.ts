@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const backendPort = env.PORT || "4001";
+  const backendPort = env.PORT || "4000";
 
   return {
     base: "./",

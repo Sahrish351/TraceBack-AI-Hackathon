@@ -69,15 +69,81 @@ export class MeterlessMission {
       "Reconcile 4-way data sources for supplier overcharge detection and generate evidence-backed resolution.";
   }
 
-  async run(poId: string): Promise<{
+  /**
+   * Diagnostic health check for Meterless agent orchestration layer
+   */
+  static async getHealthStatus(customFetch?: typeof fetch): Promise<{
+    mode: "live" | "mock";
+    status: string;
+    configured: boolean;
+    architecture: string;
+    endpoint?: string;
+    reason?: string;
+  }> {
+    const fetchImpl = customFetch || fetch;
+
+    if (isMeterlessLive) {
+      try {
+        const res = await fetchImpl(`${config.meterlessApiUrl}/health`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${config.meterlessApiKey}`,
+            "Content-Type": "application/json"
+          }
+        });
+        if (res.ok) {
+          return {
+            mode: "live",
+            status: "Connected and verified",
+            configured: true,
+            architecture: "Remote Meterless Cloud Orchestration -> H-MEM Sync",
+            endpoint: config.meterlessApiUrl
+          };
+        }
+        return {
+          mode: "mock",
+          status: "Blocked by credentials or account access",
+          configured: true,
+          architecture: "Scout Intent -> Relay Execution -> H-MEM Session Memory",
+          endpoint: config.meterlessApiUrl,
+          reason: `Meterless endpoint responded with HTTP ${res.status}`
+        };
+      } catch (err: any) {
+        return {
+          mode: "mock",
+          status: "Blocked by credentials or account access",
+          configured: true,
+          architecture: "Scout Intent -> Relay Execution -> H-MEM Session Memory",
+          endpoint: config.meterlessApiUrl,
+          reason: err.message || "Network connection failure"
+        };
+      }
+    }
+
+    return {
+      mode: "mock",
+      status: "Not configured (Local / demo mode)",
+      configured: false,
+      architecture: "Scout Intent -> Relay Execution -> H-MEM Session Memory",
+      reason: "METERLESS_API_KEY environment variable is not configured"
+    };
+  }
+
+  async run(
+    poId: string,
+    customFetch?: typeof fetch
+  ): Promise<{
     missionTrace: MissionTrace;
     unifiedRecord: UnifiedRecord;
     discrepancies: Discrepancy[];
     summary: AnalysisSummary;
     explanation: ExplanationOutput;
+    mode: "live" | "local_demo";
   }> {
     const missionStart = performance.now();
     const steps: MissionTraceStep[] = [];
+    const fetchImpl = customFetch || fetch;
+    let executionMode: "live" | "local_demo" = "local_demo";
 
     logger.info(`[Meterless] Initiating Mission ${this.missionId} for PO ${poId}`);
 
@@ -85,7 +151,7 @@ export class MeterlessMission {
     if (isMeterlessLive) {
       try {
         logger.info(`[Meterless LIVE] Relaying mission to Meterless endpoint ${config.meterlessApiUrl}/missions...`);
-        const liveRes = await fetch(`${config.meterlessApiUrl}/missions`, {
+        const liveRes = await fetchImpl(`${config.meterlessApiUrl}/missions`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${config.meterlessApiKey}`,
@@ -102,6 +168,7 @@ export class MeterlessMission {
           const liveData = (await liveRes.json()) as any;
           if (liveData?.trace) {
             logger.info("[Meterless LIVE] Successfully received remote agent mission trace.");
+            executionMode = "live";
           }
         }
       } catch (err) {
@@ -232,7 +299,8 @@ export class MeterlessMission {
       unifiedRecord,
       discrepancies,
       summary,
-      explanation
+      explanation,
+      mode: executionMode
     };
   }
 }

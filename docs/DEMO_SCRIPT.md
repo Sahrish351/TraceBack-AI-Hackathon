@@ -1,99 +1,44 @@
-# TraceBack AI — 1–4 Minute Hackathon Demo Script
+# TraceBack AI — Video Demo Script (1 to 4 Minutes)
 
-> **Target Audience**: Hackathon Judges (Business Impact, Technical Rigor, Sponsor Tech Integration)  
-> **Total Duration**: 3 to 4 Minutes  
-> **Key Metric to Emphasize**: **$1,200 USD recovered on a single purchase order**, 100% evidence-grounded.
-
----
-
-## ⏱️ Minute 0:00 – 0:30 | The Hook & Business Problem
-
-**Speaker**:
-> "Good morning judges. In global enterprise supply chains, companies quietly lose between **1.5% and 4% of their total procurement spend** to uncaptured supplier overcharges.
-> 
-> The core reason? Data fragmentation. Your purchase orders sit in SAP, your warehouse delivery notes sit in your WMS, your invoices arrive as PDFs in Accounts Payable, and your contract pricing lives in legal agreements. No one has time to manually cross-reference all four.
-> 
-> Introducing **TraceBack AI** — an autonomous AI agent that reconciles all 4 sources, detects financial leakage, proves every penny with a verifiable evidence trail, and drafts a resolution letter in under 200 milliseconds."
+**Target Duration:** 2 to 3.5 minutes  
+**Presenter:** Auditor / Participant  
+**Demo URL:** `http://localhost:3000` (or GitHub Pages live link)  
+**Tone:** Confident, professional, evidence-first, and honest.
 
 ---
 
-## ⏱️ Minute 0:30 – 1:15 | The Live Investigation (PO-1001)
+## ⏱️ Video Timeline Breakdown
 
-*(Action: Screen shows TraceBack AI Dashboard loaded on `PO-1001`)*
-
-**Speaker**:
-> "Let's look at a live audit for Purchase Order `PO-1001` with supplier SUP-42.
-> 
-> Instantly, TraceBack AI surfaces **$1,200 USD in recoverable financial overcharges** across two distinct violations, corroborated with a **96.5% confidence score**.
-> 
-> Notice the two evidence cards:
-> 1. **Quantity Overbilling**: The supplier invoiced for **120 units**, but warehouse receiving note `DN-045` logged only **100 units** received. That's 20 unreceived units billed at $50 each — exactly **$1,000 USD** in direct overcharges.
-> 2. **Contract Price Escalation**: The supplier billed at **$50/unit**, but our master procurement contract guarantees a rate of **$48/unit**. That's an unauthorized $2/unit markup on 100 units — adding **$200 USD** in rate leakage."
+| Timestamp | Screen | Key Talking Points | Visual Action on Screen |
+| :--- | :--- | :--- | :--- |
+| **0:00 – 0:30** | **Landing Page** | Introduce TraceBack AI as an evidence-first supplier invoice reconciliation agent. | Scroll through landing page; highlight 4-step workflow: Collect → Compare → Show Evidence → Human Review. Click **Open Workspace**. |
+| **0:30 – 1:15** | **Overview Dashboard & Canonical Case (PO-1042)** | Explain that organizations leak 2–4% of spend to uncaptured invoice errors. Point out the **Demo Fixture Banner**. Open `PO-1042` (Northstar Office Supplies). | Click on **PO-1042** in the table. Show the banner: *"Potential Discrepancy Detected — Requires Human Review"*. Highlight: 120 invoiced vs 100 delivered = **20 unreceived units billed @ Rs 500 = Rs 10,000 potential amount**. |
+| **1:15 – 1:50** | **Evidence Trail & Calculation Transparency** | Explain that TraceBack AI never accuses suppliers of fraud; every finding cites exact file and row coordinates. | Click **Evidence Trail** tab. Show `invoices.csv:L7` vs `deliveries.csv:L6`. Click **Source Records** to preview the raw CSV view. Show the deterministic formula: `(120 - 100) × Rs 500 = Rs 10,000`. |
+| **1:50 – 2:25** | **Multi-Item Invoice Scenario (PO-2005)** | Demonstrate support for complex multi-item consignments. | Return to investigations, select **PO-2005** (Braintec). Show itemized table reconciling 5 distinct line items (sofas, chairs, tables). Highlight how quantity overbill and contract price escalation are evaluated on separate lines without double counting ($3,150 total exposure). |
+| **2:25 – 2:55** | **Human Review & Audit Trail** | Show human oversight. TraceBack AI drafts a supplier clarification email but never auto-sends it. | Click **Review Finding**. Enter reviewer notes: *"Confirmed receiving dock logged only 100 units"*. Click **Accept Finding**. Show how the decision is saved into persistent audit memory. |
+| **2:55 – 3:30** | **Integration Health & Sponsor Architecture** | Review the **Integrations** screen. Explain honest 5-state reporting: Cursor verified; Zetaris, Meterless, and NVIDIA NIM running in tested Local/Demo mode with full failover resilience. | Navigate to **Integrations** tab. Show latency, status pills, engine descriptions, and configuration guide for live keys. Close with project vision. |
 
 ---
 
-## ⏱️ Minute 1:15 – 2:00 | Sponsor Tech 1: Zetaris Data Virtualization & Evidence Trail
+## 🎙️ Spoken Script (Word-for-Word Guide)
 
-*(Action: Click on the chip `invoices.csv:L2`, opening the `SourceModal` viewer. Highlight the table row and column. Then toggle 'View Zetaris SQL'.)*
+### Part 1: Introduction (0:00 – 0:30)
+> *"Hello judges! Welcome to TraceBack AI. In procurement and accounts payable, companies leak millions every year because invoice checking is manual, fragmented across disparate spreadsheets and portals, and generic AI chatbots hallucinate numbers.*  
+> *TraceBack AI is built for the hackathon track 'The Agent That Can Explain Why'. It provides an evidence-first investigation platform where every invoice warning comes with its receipts, calculations are 100% deterministic, and a human reviewer always makes the final call. Let's enter the workspace."*
 
-**Speaker**:
-> "Now, how does TraceBack AI know this without brittle ETL pipelines?
-> 
-> Here is where **Zetaris** comes in as our Data Virtualization layer. TraceBack AI uses **Zetaris federated SQL queries** to join across Purchase Orders, Delivery Notes, Invoices, and Contract Prices in real time without copying or duplicating data.
-> 
-> Every single finding carries an immutable **Evidence Trail**: citing the exact `{file, row, column, value}`. If an auditor or supplier disputes a claim, clicking any chip pops up the raw ground-truth data row in our Source Viewer. Total transparency, zero hallucinations."
+### Part 2: Canonical Scenario — Northstar Office Supplies (0:30 – 1:15)
+> *"Here on the dashboard, we immediately see an overview of our procurement investigations. Notice our transparent demo fixture banner—all benchmark cases are sample fixtures so judges can verify every calculation.*  
+> *Let's inspect our canonical benchmark case: Purchase Order PO-1042 from Northstar Office Supplies.*  
+> *TraceBack AI immediately flags a clear finding: Potential Discrepancy Detected — Requires Human Review. We ordered 120 ergonomic office chairs at Rs 500 each. The supplier submitted invoice INV-7781 billing us for all 120 units. But warehouse receiving note DN-1042 confirms our dock accepted only 100 units.*  
+> *Using deterministic arithmetic, TraceBack AI calculates the exact potential discrepancy: 20 unreceived units times Rs 500 agreed rate equals exactly Rs 10,000."*
 
----
+### Part 3: Evidence Trail & Multi-Item Support (1:15 – 2:25)
+> *"Crucially, our agent doesn't guess. In the Evidence tab, judges can see the exact line-level audit trail: Invoice line 7 versus Delivery slip line 6. We can open the raw source file viewer to inspect the original records.*  
+> *TraceBack AI also handles complex multi-item consignments. If we switch to PO-2005 from Braintec, our engine matches 5 distinct line items, identifying both an unreceived sofa quantity variance of $2,400 and a separate contract rate escalation of $750 on lounge chairs—totalling $3,150 without double-counting."*
 
-## ⏱️ Minute 2:00 – 2:45 | Sponsor Tech 2: Meterless Agent Mission & Step Reasoning
+### Part 4: Human Review & AI Explanation (2:25 – 2:55)
+> *"Under the AI Explanation tab, our explainer generates an executive summary and drafts a polite supplier clarification letter citing the exact source documents. TraceBack AI never auto-sends emails or debits accounts. In the Human Review screen, an auditor reviews the evidence, types audit notes, and records an official decision—which is immutably stored in persistent memory."*
 
-*(Action: Click on the 'Meterless Agent Trace' tab. Expand Step 1 through Step 5.)*
-
-**Speaker**:
-> "TraceBack AI is not a simple chatbot or a hardcoded script — it is an autonomous agent orchestrated using the **Meterless Agent Architecture**:
-> 
-> 1. **Scout Intent**: Determines target scope, thresholds, and sets verification tolerances.
-> 2. **Fetch Unified Data**: Relays the federated virtualization request to Zetaris.
-> 3. **Detect Discrepancies**: Applies pure 4-way comparison rules.
-> 4. **Score Confidence**: Evaluates cross-source corroboration and risk exposure.
-> 5. **Draft Explanation**: Synthesizes human-readable audit justification.
-> 
-> Every step captures the agent's internal **Thought, Action, and Observation**, and the entire session is committed to Meterless **H-MEM (Hierarchical Memory)** for audit compliance."
-
----
-
-## ⏱️ Minute 2:45 – 3:15 | Sponsor Tech 3: Human-in-the-Loop & NVIDIA NIM
-
-*(Action: Click 'Approve Claim ($1,200)'. Then navigate to the 'Supplier Resolution Email' tab.)*
-
-**Speaker**:
-> "Crucially, TraceBack AI keeps a **Human in the Loop**. No dispute is sent to a supplier without human authorization.
-> 
-> With one click, the lead auditor clicks **'Approve Claim ($1,200)'**.
-> 
-> TraceBack AI immediately invokes **NVIDIA NIM** running `meta/llama-3.1-8b-instruct` to draft a polite, highly specific clarification email for Supplier SUP-42. It breaks down the exact invoice number, delivery note, contract schedule, and requests an immediate $1,200 debit note. We can copy it or dispatch it straight to the supplier queue."
-
----
-
-## ⏱️ Minute 3:15 – 3:45 | The Credibility Test (PO-1002 Clean Audit)
-
-*(Action: Click on `PO-1002` in the left sidebar.)*
-
-**Speaker**:
-> "A major weakness of naive LLM audit tools is that they hallucinate errors where none exist.
-> 
-> Let's switch to `PO-1002`.
-> 
-> TraceBack AI immediately verifies 50 units ordered, 50 delivered, 50 invoiced at the contracted $20 rate. The system returns **$0.00 Overcharge** and **100% Concordance**, instantly clearing the invoice for payment without unnecessary supplier friction."
-
----
-
-## ⏱️ Minute 3:45 – 4:00 | Summary & Developer Experience
-
-**Speaker**:
-> "To summarize:
-> - **Financial Impact**: $1,200 recovered in seconds on a single order.
-> - **Sponsor Tech**: Real **Zetaris** data virtualization, **Meterless** agent orchestration, **NVIDIA NIM** inference, and engineered with **Cursor Agent Mode**.
-> - Fully runnable, tested, and ready to deploy.
-> 
-> Thank you, and we welcome your questions!"
+### Part 5: Sponsor Technology & Wrap-Up (2:55 – 3:30)
+> *"Finally, let's look at our Integrations Health screen. In compliance with strict hackathon integrity, we never fake a live connection. Cursor is verified as our core development environment. Zetaris, Meterless, and NVIDIA NIM are fully implemented with resilient adapter contracts and currently operate in verified Local / Demo mode using in-memory virtualized SQLite schemas and deterministic fallback models.*  
+> *TraceBack AI: Transparent. Traceable. Trusted. Thank you!"*
