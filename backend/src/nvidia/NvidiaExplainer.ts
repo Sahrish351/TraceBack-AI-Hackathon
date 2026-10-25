@@ -147,39 +147,44 @@ Respond ONLY in valid JSON format with keys:
     // Build breakdown for email
     const breakdownBullets = discrepancies
       .map((d) => {
+        const impactStr = currency === "USD" ? `$${d.financialImpact.toLocaleString()}` : `${currency} ${d.financialImpact.toLocaleString()}`;
         if (d.type === "QTY_OVERBILL") {
-          return `• Quantity Variance (${d.delta} unreceived units): Invoiced for ${record.invoicedQty} units, but warehouse receiving slip ${record.deliveryId} documents only ${record.deliveredQty} units received. Overbill value: $${d.financialImpact.toLocaleString()} (citing ${d.sourceA.file}:L${d.sourceA.row} vs ${d.sourceB.file}:L${d.sourceB.row}).`;
+          const unitRate = currency === "USD" ? `$${record.invoiceUnitPrice}` : `${currency} ${record.invoiceUnitPrice}`;
+          return `• Quantity Variance (${d.delta} unreceived units): Invoiced for ${record.invoicedQty} units, but warehouse receiving slip ${record.deliveryId || "N/A"} documents ${record.deliveredQty} units received. Potential overbill value: ${impactStr} (citing ${d.sourceA.file}:L${d.sourceA.row} vs ${d.sourceB.file}:L${d.sourceB.row}).`;
         }
         if (d.type === "PRICE_ABOVE_CONTRACT") {
-          return `• Price Rate Variance ($${d.delta}/unit): Billed at $${record.invoiceUnitPrice}/unit vs master contracted rate of $${record.contractUnitPrice}/unit under current agreement. Overbill value on ${record.deliveredQty} delivered units: $${d.financialImpact.toLocaleString()} (citing ${d.sourceA.file}:L${d.sourceA.row} vs ${d.sourceB.file}:L${d.sourceB.row}).`;
+          const deltaRate = currency === "USD" ? `$${d.delta}` : `${currency} ${d.delta}`;
+          return `• Price Rate Variance (${deltaRate}/unit): Billed at ${currency === "USD" ? `$${record.invoiceUnitPrice}` : `${currency} ${record.invoiceUnitPrice}`}/unit vs master contracted rate of ${currency === "USD" ? `$${record.contractUnitPrice}` : `${currency} ${record.contractUnitPrice}`}/unit. Potential variance on ${record.deliveredQty} delivered units: ${impactStr} (citing ${d.sourceA.file}:L${d.sourceA.row} vs ${d.sourceB.file}:L${d.sourceB.row}).`;
         }
         if (d.type === "UNEXPECTED_FEE") {
-          return `• Unauthorized Surcharge: Invoice includes $${d.delta} in non-contracted ancillary fees.`;
+          return `• Unauthorized Surcharge: Invoice includes ${currency === "USD" ? `$${d.delta}` : `${currency} ${d.delta}`} in non-contracted ancillary fees.`;
         }
-        return `• ${d.type}: ${d.reason} ($${d.financialImpact.toLocaleString()})`;
+        if (d.type === "MISSING_EVIDENCE") {
+          return `• Missing Evidence: ${d.reason}`;
+        }
+        return `• ${d.type}: ${d.reason} (${impactStr})`;
       })
       .join("\n\n");
 
-    const executiveSummary = `Automated four-way audit identified $${totalFinancialImpact.toLocaleString()} ${currency} in supplier overcharges across ${discrepancies.length} discrepancy categories for Purchase Order ${record.poId}. Primary drivers: 20 unreceived units billed ($1,000) and contract price escalation ($200) on Delivery Note ${record.deliveryId}.`;
+    const totalStr = currency === "USD" ? `$${totalFinancialImpact.toLocaleString()}` : `${currency} ${totalFinancialImpact.toLocaleString()}`;
+    const executiveSummary = `Reconciliation analysis identified ${totalStr} in potential discrepancies across ${discrepancies.length} category/categories for Purchase Order ${record.poId} (${record.supplierId}). Primary findings: ${discrepancies.map((d) => d.reason).join(" ")} Status: Potential Discrepancy — Requires Human Review.`;
 
-    const auditRationale = `TraceBack AI reconciled Purchase Order ${record.poId}, Delivery Slip ${record.deliveryId}, Invoice ${record.invoiceId}, and Master Contract ${record.supplierId}. Cross-source join confirmed delivery of only 100 units of ${record.item} against 120 invoiced units, and an invoiced unit price of $50 against a contracted ceiling of $48. Total recoverable financial leakage is exactly $${totalFinancialImpact.toLocaleString()} ${currency}.`;
+    const auditRationale = `TraceBack AI reconciled Purchase Order ${record.poId}, Delivery Slip ${record.deliveryId || "N/A"}, Invoice ${record.invoiceId || "N/A"}, and Master Contract for ${record.supplierId}. Cross-source 4-way matching observed ${discrepancies.length} variance item(s). Total calculated potential exposure is exactly ${totalStr}.`;
 
     const emailBody = `Dear ${record.supplierId} Accounts Receivable Team,
 
-We are writing regarding Invoice ${record.invoiceId || "INV-9001"} submitted against Purchase Order ${record.poId} for item ${record.item}.
+We are writing regarding Invoice ${record.invoiceId || "INV"} submitted against Purchase Order ${record.poId} for item ${record.item}.
 
-Our automated cross-source reconciliation has identified a total overcharge variance of $${totalFinancialImpact.toLocaleString()} ${currency}. We kindly request an adjustment or formal credit note based on the verified evidence trail detailed below:
+Our automated cross-source reconciliation has identified a potential discrepancy variance of ${totalStr}. We kindly request clarification or an adjustment based on the verified evidence trail detailed below:
 
 DISCREPANCY EVIDENCE TRAIL:
 ${breakdownBullets}
 
-TOTAL RECOVERY CLAIM: $${totalFinancialImpact.toLocaleString()} ${currency}
+TOTAL DISCREPANCY AMOUNT: ${totalStr}
 
 REQUESTED ACTION:
-1. Please issue a Credit Note in the amount of $${totalFinancialImpact.toLocaleString()} ${currency} referencing PO ${record.poId} and Invoice ${record.invoiceId}.
-2. Alternatively, please provide a revised invoice reflecting the verified receipt count of ${record.deliveredQty} units at our contracted rate of $${record.contractUnitPrice}/unit (totaling $${(record.deliveredQty * record.contractUnitPrice).toLocaleString()} ${currency}).
-
-If you have any documentation indicating fulfillment of the remaining units or contract amendment updates, please respond to this notice with supporting delivery receipts.
+1. Please review the delivery and contract documentation referenced above.
+2. If confirmed, please issue a credit note or submit a corrected invoice referencing PO ${record.poId} and Invoice ${record.invoiceId || "INV"}.
 
 Thank you for your prompt attention to this matter.
 
@@ -191,10 +196,10 @@ TraceBack AI Automated Reconciliation Platform`;
       executiveSummary,
       auditRationale,
       supplierEmail: {
-        to: `billing@${record.supplierId.toLowerCase()}.supplier-portal.com`,
+        to: `billing@${record.supplierId.toLowerCase().replace(/\s+/g, "-")}.supplier-portal.com`,
         recipientName: `${record.supplierId} Accounts Receivable`,
-        subject: `Discrepancy Notice & Credit Note Request: PO ${record.poId} / Inv ${record.invoiceId} [Claim: $${totalFinancialImpact.toLocaleString()} ${currency}]`,
-        claimAmount: `$${totalFinancialImpact.toLocaleString()} ${currency}`,
+        subject: `Discrepancy Notice: PO ${record.poId} / Inv ${record.invoiceId || "INV"} [Claim: ${totalStr}]`,
+        claimAmount: totalStr,
         body: emailBody
       },
       modelUsed: "meta/llama-3.1-8b-instruct (NVIDIA NIM Fallback Engine)",

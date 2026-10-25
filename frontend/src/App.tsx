@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 
 export const App: React.FC = () => {
-  const [selectedPoId, setSelectedPoId] = useState<string>("PO-1001");
+  const [selectedPoId, setSelectedPoId] = useState<string>("PO-1042");
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrderItem[]>([]);
   const [investigation, setInvestigation] = useState<InvestigationResult | null>(null);
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);

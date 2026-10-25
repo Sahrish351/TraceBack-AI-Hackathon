@@ -11,7 +11,8 @@ export type DiscrepancyType =
   | "QTY_OVERBILL"
   | "PRICE_ABOVE_CONTRACT"
   | "UNEXPECTED_FEE"
-  | "DUPLICATE_INVOICE";
+  | "DUPLICATE_INVOICE"
+  | "MISSING_EVIDENCE";
 
 export interface Discrepancy {
   id: string;

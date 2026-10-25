@@ -71,7 +71,9 @@ router.get("/pos", (_req: Request, res: Response) => {
       currency: r.data.currency || "USD",
       orderDate: r.data.order_date,
       demoBadge:
-        r.data.po_id === "PO-1001"
+        r.data.po_id === "PO-1042"
+          ? "Potential Discrepancy (Rs 10,000)"
+          : r.data.po_id === "PO-1001"
           ? "Overcharges Detected ($1,200)"
           : r.data.po_id === "PO-1002"
           ? "Clean Audit (Concordant)"

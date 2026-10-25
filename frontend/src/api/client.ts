@@ -66,6 +66,18 @@ const STATIC_CSV_DUMPS: Record<string, CsvFileDump> = {
           currency: "USD",
           order_date: "2026-10-04"
         }
+      },
+      {
+        rowNumber: 6,
+        values: {
+          po_id: "PO-1042",
+          supplier_id: "Northstar Office Supplies",
+          item: "Ergonomic Office Chairs",
+          ordered_qty: "120",
+          unit_price: "500",
+          currency: "Rs",
+          order_date: "2026-10-24"
+        }
       }
     ]
   },
@@ -114,6 +126,17 @@ const STATIC_CSV_DUMPS: Record<string, CsvFileDump> = {
           item: "Cable-Z",
           delivered_qty: "100",
           delivery_date: "2026-10-12",
+          warehouse: "WH-01"
+        }
+      },
+      {
+        rowNumber: 6,
+        values: {
+          delivery_id: "DN-1042",
+          po_id: "PO-1042",
+          item: "Ergonomic Office Chairs",
+          delivered_qty: "100",
+          delivery_date: "2026-10-24",
           warehouse: "WH-01"
         }
       }
@@ -187,6 +210,19 @@ const STATIC_CSV_DUMPS: Record<string, CsvFileDump> = {
           fees: "0",
           invoice_date: "2026-10-15"
         }
+      },
+      {
+        rowNumber: 7,
+        values: {
+          invoice_id: "INV-7781",
+          po_id: "PO-1042",
+          item: "Ergonomic Office Chairs",
+          invoiced_qty: "120",
+          unit_price: "500",
+          currency: "Rs",
+          fees: "0",
+          invoice_date: "2026-10-24"
+        }
       }
     ]
   },
@@ -233,6 +269,16 @@ const STATIC_CSV_DUMPS: Record<string, CsvFileDump> = {
           valid_from: "2026-01-01",
           valid_to: "2026-12-31"
         }
+      },
+      {
+        rowNumber: 6,
+        values: {
+          supplier_id: "Northstar Office Supplies",
+          item: "Ergonomic Office Chairs",
+          contract_unit_price: "500",
+          valid_from: "2026-01-01",
+          valid_to: "2026-12-31"
+        }
       }
     ]
   }
@@ -274,6 +320,16 @@ const STATIC_HEALTH: SystemHealth = {
 };
 
 const STATIC_POS: PurchaseOrderItem[] = [
+  {
+    poId: "PO-1042",
+    supplierId: "Northstar Office Supplies",
+    item: "Ergonomic Office Chairs",
+    orderedQty: 120,
+    unitPrice: 500,
+    currency: "Rs",
+    orderDate: "2026-10-24",
+    demoBadge: "Potential Discrepancy (Rs 10,000)"
+  },
   {
     poId: "PO-1001",
     supplierId: "SUP-42",
@@ -322,6 +378,142 @@ function getStaticInvestigation(poId: string): InvestigationResult {
     reviewer: "Unassigned",
     timestamp: new Date().toISOString()
   };
+
+  if (poId === "PO-1042") {
+    return {
+      poId: "PO-1042",
+      supplierId: "Northstar Office Supplies",
+      item: "Ergonomic Office Chairs",
+      summary: {
+        poId: "PO-1042",
+        supplierId: "Northstar Office Supplies",
+        item: "Ergonomic Office Chairs",
+        totalFinancialImpact: 10000,
+        currency: "Rs",
+        discrepancies: [
+          {
+            id: "DISC-QTY-PO-1042-01",
+            type: "QTY_OVERBILL",
+            severity: "high",
+            field: "invoiced_qty vs delivered_qty",
+            sourceA: {
+              label: "Invoice INV-7781 Invoiced Qty",
+              file: "invoices.csv",
+              row: 7,
+              column: "invoiced_qty",
+              value: 120
+            },
+            sourceB: {
+              label: "Delivery DN-1042 Received Qty",
+              file: "deliveries.csv",
+              row: 6,
+              column: "delivered_qty",
+              value: 100
+            },
+            delta: 20,
+            financialImpact: 10000,
+            currency: "Rs",
+            reason: "Invoice bills for 120 units, but warehouse receiving note DN-1042 confirms receipt of only 100 units. 20 unreceived units billed.",
+            confidence: 0.98,
+            remediationHint: "Request proof of delivery or invoice amendment crediting 20 units at Rs 500 (Rs 10,000)."
+          }
+        ],
+        discrepancyCount: 1,
+        status: "FLAGGED_FOR_REVIEW",
+        confidenceScore: 0.98,
+        auditTimestamp: new Date().toISOString()
+      },
+      discrepancies: [
+        {
+          id: "DISC-QTY-PO-1042-01",
+          type: "QTY_OVERBILL",
+          severity: "high",
+          field: "invoiced_qty vs delivered_qty",
+          sourceA: {
+            label: "Invoice INV-7781 Invoiced Qty",
+            file: "invoices.csv",
+            row: 7,
+            column: "invoiced_qty",
+            value: 120
+          },
+          sourceB: {
+            label: "Delivery DN-1042 Received Qty",
+            file: "deliveries.csv",
+            row: 6,
+            column: "delivered_qty",
+            value: 100
+          },
+          delta: 20,
+          financialImpact: 10000,
+          currency: "Rs",
+          reason: "Invoice bills for 120 units, but warehouse receiving note DN-1042 confirms receipt of only 100 units. 20 unreceived units billed.",
+          confidence: 0.98,
+          remediationHint: "Request proof of delivery or invoice amendment crediting 20 units at Rs 500 (Rs 10,000)."
+        }
+      ],
+      unifiedRecord: {
+        poId: "PO-1042",
+        supplierId: "Northstar Office Supplies",
+        item: "Ergonomic Office Chairs",
+        currency: "Rs",
+        orderedQty: 120,
+        deliveredQty: 100,
+        invoicedQty: 120,
+        poUnitPrice: 500,
+        invoiceUnitPrice: 500,
+        contractUnitPrice: 500,
+        fees: 0,
+        orderDate: "2026-10-24",
+        deliveryDate: "2026-10-24",
+        invoiceDate: "2026-10-24",
+        warehouse: "WH-01",
+        invoiceId: "INV-7781",
+        deliveryId: "DN-1042",
+        sqlQueryExecuted: "SELECT * FROM virtualized_reconciliation WHERE po_id = 'PO-1042';",
+        sourceRefs: [
+          { label: "Purchase Order Quantity", file: "purchase_orders.csv", row: 6, column: "ordered_qty", value: 120 },
+          { label: "Delivery Receipt Quantity", file: "deliveries.csv", row: 6, column: "delivered_qty", value: 100 },
+          { label: "Supplier Invoiced Quantity", file: "invoices.csv", row: 7, column: "invoiced_qty", value: 120 },
+          { label: "Billed Unit Price", file: "invoices.csv", row: 7, column: "unit_price", value: 500 },
+          { label: "Agreed Contract Price", file: "contract_prices.csv", row: 6, column: "contract_unit_price", value: 500 }
+        ]
+      },
+      missionTrace: {
+        missionId: "MSN-PO1042-CANONICAL",
+        objective: "Reconcile PO-1042 for Northstar Office Supplies across ERP, WMS, and Billing portals.",
+        poId: "PO-1042",
+        totalDurationMs: 88,
+        hMemKey: "mission:PO-1042",
+        steps: [
+          { step: 1, name: "scoutIntent", thought: "Scouting PO-1042 scope: Northstar Office Supplies. Target: 120 ordered vs goods receipt.", action: "Resolved PO scope to PO-1042.", observation: "Scope validated. Initialized 4-way matching relay.", durationMs: 12, status: "completed" },
+          { step: 2, name: "fetchUnifiedData", thought: "Querying virtualized multi-source tables via Zetaris in-memory federator.", action: "Executed federated SQL query.", observation: "Fetched 4 linked records: PO, DN-1042, INV-7781, Contract Catalog.", durationMs: 24, status: "completed" },
+          { step: 3, name: "detectDiscrepancies", thought: "Evaluating 4-way reconciliation rules: QTY_OVERBILL, PRICE_ABOVE_CONTRACT, SHORT_DELIVERY, UNEXPECTED_FEE, DUPLICATE_INVOICE.", action: "Computed deterministic variance.", observation: "Observed 1 discrepancy: Invoiced 120 units vs Delivered 100 units. Delta: 20 units.", durationMs: 15, status: "completed" },
+          { step: 4, name: "scoreConfidence", thought: "Synthesizing financial exposure: 20 unreceived units * Rs 500 agreed rate = Rs 10,000 potential amount.", action: "Calculated exposure.", observation: "Potential amount: Rs 10,000. Status: Potential Discrepancy — Requires Human Review.", durationMs: 14, status: "completed" },
+          { step: 5, name: "draftExplanation", thought: "Drafting evidence-grounded audit narrative and supplier clarification letter.", action: "Prepared audit summary and supplier draft.", observation: "Grounded draft generated citing invoices.csv:L7 vs deliveries.csv:L6.", durationMs: 23, status: "completed" }
+        ]
+      },
+      explanation: {
+        executiveSummary: "Reconciliation analysis identified Rs 10,000 in potential discrepancies for Purchase Order PO-1042 (Northstar Office Supplies). Primary finding: Invoice bills for 120 units, but warehouse receiving note DN-1042 confirms receipt of only 100 units (20 unreceived units billed). Status: Potential Discrepancy — Requires Human Review.",
+        auditRationale: "TraceBack AI reconciled Purchase Order PO-1042, Delivery Slip DN-1042, Invoice INV-7781, and Master Contract for Northstar Office Supplies. Cross-source join confirmed delivery of only 100 units of Ergonomic Office Chairs against 120 invoiced units at an agreed unit price of Rs 500. Total potential exposure is exactly Rs 10,000.",
+        supplierEmail: {
+          to: "billing@northstar.supplier-portal.com",
+          recipientName: "Northstar Office Supplies Accounts Receivable",
+          subject: "Inquiry Regarding Invoice INV-7781 / PO PO-1042 [Potential Discrepancy: Rs 10,000]",
+          claimAmount: "Rs 10,000",
+          body: "Dear Northstar Office Supplies Accounts Receivable Team,\n\nWe are writing regarding Invoice INV-7781 submitted against Purchase Order PO-1042 for item Ergonomic Office Chairs.\n\nOur cross-source reconciliation has identified a potential discrepancy variance of Rs 10,000 based on the verified evidence trail detailed below:\n\nDISCREPANCY EVIDENCE TRAIL:\n• Quantity Variance (20 unreceived units): Invoiced for 120 units, but warehouse receiving slip DN-1042 documents only 100 units received. Potential overbill value: Rs 10,000 (citing invoices.csv:L7 vs deliveries.csv:L6).\n\nTOTAL POTENTIAL DISCREPANCY: Rs 10,000\n\nREQUESTED ACTION:\n1. Please review the delivery and contract documentation referenced above.\n2. If confirmed, please issue a credit note or submit a corrected invoice for 100 units at Rs 500/unit (Rs 50,000).\n\nThank you for your prompt attention to this matter.\n\nSincerely,\nProcurement & Accounts Payable Audit Team\nTraceBack AI Automated Reconciliation Platform"
+        },
+        modelUsed: "meta/llama-3.1-8b-instruct (NVIDIA NIM Fallback Engine)",
+        isLive: false
+      },
+      dataSourcesStatus: {
+        purchaseOrders: { loaded: true, rowCount: 5, file: "purchase_orders.csv" },
+        deliveries: { loaded: true, rowCount: 5, file: "deliveries.csv" },
+        invoices: { loaded: true, rowCount: 6, file: "invoices.csv" },
+        contractPrices: { loaded: true, rowCount: 5, file: "contract_prices.csv" }
+      },
+      reviewDecision: existingReview
+    };
+  }
 
   if (poId === "PO-1003") {
     return {

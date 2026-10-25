@@ -1,4 +1,6 @@
-import { DatabaseSync } from "node:sqlite";
+import { createRequire } from "node:module";
+const nodeRequire = createRequire(process.cwd() + "/");
+const { DatabaseSync } = nodeRequire("node:sqlite") || {};
 import { config, isZetarisLive } from "../config.js";
 import { logger } from "../utils/logger.js";
 import { readCsvSync, findSourceRef } from "../utils/csv.js";
@@ -15,7 +17,7 @@ import { mockScenarios } from "../mockData.js";
  * federated SQL join across 4 disparate CSV sources (PO, Deliveries, Invoices, Contract Prices).
  */
 export class ZetarisClient {
-  private db: DatabaseSync | null = null;
+  private db: any = null;
   private initialized = false;
 
   constructor() {

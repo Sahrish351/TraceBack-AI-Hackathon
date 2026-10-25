@@ -322,5 +322,84 @@ WHERE po.po_id = 'PO-1004';
         value: 10
       }
     ]
+  },
+  "PO-1042": {
+    poId: "PO-1042",
+    supplierId: "Northstar Office Supplies",
+    item: "Ergonomic Office Chairs",
+    currency: "Rs",
+    orderedQty: 120,
+    deliveredQty: 100,
+    invoicedQty: 120,
+    poUnitPrice: 500,
+    invoiceUnitPrice: 500,
+    contractUnitPrice: 500,
+    fees: 0,
+    orderDate: "2026-10-24",
+    deliveryDate: "2026-10-24",
+    invoiceDate: "2026-10-24",
+    warehouse: "WH-01",
+    invoiceId: "INV-7781",
+    deliveryId: "DN-1042",
+    allInvoicesForPo: [
+      {
+        invoiceId: "INV-7781",
+        invoicedQty: 120,
+        unitPrice: 500,
+        fees: 0
+      }
+    ],
+    sqlQueryExecuted: `
+SELECT 
+  po.po_id, po.supplier_id, po.item, po.currency, po.ordered_qty,
+  del.delivered_qty, inv.invoiced_qty,
+  po.unit_price AS po_unit_price,
+  inv.unit_price AS invoice_unit_price,
+  cp.contract_unit_price,
+  inv.fees, po.order_date, del.delivery_date, inv.invoice_date,
+  del.warehouse, inv.invoice_id, del.delivery_id
+FROM purchase_orders po
+LEFT JOIN deliveries del ON po.po_id = del.po_id AND po.item = del.item
+LEFT JOIN invoices inv ON po.po_id = inv.po_id AND po.item = inv.item
+LEFT JOIN contract_prices cp ON po.supplier_id = cp.supplier_id AND po.item = cp.item
+WHERE po.po_id = 'PO-1042';
+    `.trim(),
+    sourceRefs: [
+      {
+        label: "Purchase Order",
+        file: "purchase_orders.csv",
+        row: 6,
+        column: "ordered_qty",
+        value: 120
+      },
+      {
+        label: "Delivery Note",
+        file: "deliveries.csv",
+        row: 6,
+        column: "delivered_qty",
+        value: 100
+      },
+      {
+        label: "Supplier Invoice",
+        file: "invoices.csv",
+        row: 7,
+        column: "invoiced_qty",
+        value: 120
+      },
+      {
+        label: "Invoice Unit Price",
+        file: "invoices.csv",
+        row: 7,
+        column: "unit_price",
+        value: 500
+      },
+      {
+        label: "Contract Unit Price",
+        file: "contract_prices.csv",
+        row: 6,
+        column: "contract_unit_price",
+        value: 500
+      }
+    ]
   }
 };
