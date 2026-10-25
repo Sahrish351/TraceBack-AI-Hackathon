@@ -157,7 +157,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
                 <div className="text-[11px] truncate text-[#A3B8AD] mt-0.5">{po.supplierId}</div>
                 <div className="text-[10px] mt-1 flex items-center justify-between">
-                  <span className="text-[#DCEBE1] font-mono">{po.currency} {po.unitPrice * po.orderedQty}</span>
+                  <span className="text-[#DCEBE1] font-mono">
+                    {po.unitPrice > 0
+                      ? `${po.currency} ${(po.unitPrice * po.orderedQty).toLocaleString()}`
+                      : `${po.currency} Multi-Item`}
+                  </span>
                   <span className={isCanonical ? "text-[#F3C5B5]" : po.poId === "PO-1002" ? "text-[#B8D4C3]" : "text-[#F3C5B5]"}>
                     {po.demoBadge}
                   </span>

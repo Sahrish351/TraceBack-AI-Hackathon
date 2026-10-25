@@ -109,10 +109,10 @@ export const HumanReviewScreen: React.FC<HumanReviewScreenProps> = ({
 
             <div className="space-y-1">
               <h3 className="font-serif text-xl font-bold text-[#143D2F]">
-                Quantity Mismatch — {unifiedRecord.invoiceId}
+                {discrepancies[0]?.type || "Reconciliation Finding"} — {unifiedRecord.invoiceId || unifiedRecord.poId}
               </h3>
               <p className="text-xs text-[#667066]">
-                Physical warehouse goods receipt note does not substantiate the invoiced quantity.
+                {discrepancies[0]?.reason || "Discrepancy identified between cross-source procurement records requiring human review."}
               </p>
             </div>
 
@@ -132,15 +132,43 @@ export const HumanReviewScreen: React.FC<HumanReviewScreenProps> = ({
                 </span>
               </div>
               <div>
-                <span className="text-[#8F9A8F] block">Analysis Date</span>
-                <span className="font-semibold text-[#143D2F]">{unifiedRecord.orderDate}</span>
+                <span className="text-[#8F9A8F] block">Analysis Scope</span>
+                <span className="font-semibold text-[#143D2F]">
+                  {unifiedRecord.lineItems?.length ? `${unifiedRecord.lineItems.length} Line Items` : `${unifiedRecord.orderedQty} Units`}
+                </span>
+              </div>
+            </div>
+
+            {/* Calculations & Discrepancies Breakdown */}
+            <div className="space-y-3">
+              <span className="text-xs font-semibold text-[#667066] uppercase tracking-wide block">
+                Evidence Calculation & Discrepancy Breakdown
+              </span>
+
+              <div className="space-y-2.5">
+                {discrepancies.map((d, i) => (
+                  <div key={i} className="p-3.5 rounded-lg bg-[#FAF8F3] border border-[#E5E7E2] space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-[#143D2F]">
+                        {d.itemIdentifier ? `Item [${d.itemIdentifier}]` : d.field}
+                      </span>
+                      <span className="font-bold text-[#C66A4A] font-mono">
+                        {currency} {d.financialImpact.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="text-[#667066]">{d.reason}</div>
+                    <div className="bg-white p-2 rounded border border-[#E5E7E2] font-mono text-[11px] text-[#246B52]">
+                      Formula: {d.calculation?.formula || `${d.delta} delta variance`}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* Source Evidence Cards */}
-            <div className="space-y-3">
+            <div className="space-y-3 pt-2">
               <span className="text-xs font-semibold text-[#667066] uppercase tracking-wide block">
-                Source Evidence
+                Source Document Citations
               </span>
 
               <div className="space-y-2">
@@ -278,3 +306,4 @@ export const HumanReviewScreen: React.FC<HumanReviewScreenProps> = ({
     </div>
   );
 };
+

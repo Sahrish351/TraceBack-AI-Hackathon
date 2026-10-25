@@ -12,9 +12,29 @@ export type DiscrepancyType =
   | "PRICE_ABOVE_CONTRACT"
   | "UNEXPECTED_FEE"
   | "DUPLICATE_INVOICE"
-  | "MISSING_EVIDENCE";
+  | "MISSING_EVIDENCE"
+  | "MISSING_ITEM"
+  | "DUPLICATE_ITEM"
+  | "TAX_MISMATCH"
+  | "CURRENCY_MISMATCH"
+  | "PARTIAL_DELIVERY";
 
 export type SeverityLevel = "low" | "medium" | "high";
+
+export interface DiscrepancyCalculation {
+  formula: string; // e.g. "(120 invoiced - 100 received) × Rs 500 = Rs 10,000"
+  itemIdentifier?: string;
+  expectedQty?: number;
+  actualQty?: number;
+  expectedUnitPrice?: number;
+  actualUnitPrice?: number;
+  deltaQty?: number;
+  deltaPrice?: number;
+  subtotalImpact?: number;
+  taxImpact?: number;
+  taxVariance?: number;
+  currency: string;
+}
 
 export interface Discrepancy {
   id: string;
@@ -29,6 +49,38 @@ export interface Discrepancy {
   reason: string;
   confidence: number; // 0..1
   remediationHint: string;
+  itemIdentifier?: string;
+  calculation?: DiscrepancyCalculation;
+}
+
+export interface InvoiceLineItem {
+  itemId: string;
+  description: string;
+  orderedQty: number;
+  deliveredQty: number;
+  invoicedQty: number;
+  poUnitPrice: number;
+  invoiceUnitPrice: number;
+  contractUnitPrice: number;
+  taxRate?: number; // e.g. 0.05 or 0.10
+  taxAmount?: number;
+  subtotal?: number;
+  currency?: string;
+  status?: "MATCHED" | "QTY_OVERBILL" | "QTY_SHORT" | "PRICE_MISMATCH" | "MISSING_ITEM" | "DUPLICATE_ITEM" | "INVALID_DATA";
+  sourceRefs?: SourceReference[];
+}
+
+export interface InvoiceFinancialSummary {
+  subtotal: number;
+  taxRate: number; // e.g. 0.10 (10%)
+  taxAmount: number;
+  totalAmount: number;
+  currency: string;
+  calculatedSubtotal: number;
+  calculatedTax: number;
+  calculatedTotal: number;
+  taxDiscrepancy?: number;
+  formula?: string;
 }
 
 export interface UnifiedRecord {
@@ -49,6 +101,11 @@ export interface UnifiedRecord {
   warehouse: string;
   invoiceId: string;
   deliveryId: string;
+  lineItems?: InvoiceLineItem[];
+  financialSummary?: InvoiceFinancialSummary;
+  taxRate?: number;
+  taxAmount?: number;
+  totalAmount?: number;
   allInvoicesForPo?: Array<{
     invoiceId: string;
     invoicedQty: number;

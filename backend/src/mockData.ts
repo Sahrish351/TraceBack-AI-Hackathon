@@ -401,5 +401,134 @@ WHERE po.po_id = 'PO-1042';
         value: 500
       }
     ]
+  },
+  "PO-2005": {
+    poId: "PO-2005",
+    supplierId: "Lita Co., Ltd. (Braintec)",
+    item: "Executive Furnishings & Office Seating Consignment",
+    currency: "USD",
+    orderedQty: 19,
+    deliveredQty: 17,
+    invoicedQty: 19,
+    poUnitPrice: 0,
+    invoiceUnitPrice: 0,
+    contractUnitPrice: 0,
+    fees: 0,
+    taxRate: 0.04526, // Approx 4.5% statutory VAT/Sales Tax
+    taxAmount: 4120,
+    totalAmount: 95140,
+    orderDate: "2026-10-18",
+    deliveryDate: "2026-10-23",
+    invoiceDate: "2026-10-28",
+    warehouse: "WH-PACIFIC-01",
+    invoiceId: "INV/2025/10/0003",
+    deliveryId: "DN-2025-089",
+    financialSummary: {
+      subtotal: 91020,
+      taxRate: 0.04526,
+      taxAmount: 4120,
+      totalAmount: 95140,
+      currency: "USD",
+      calculatedSubtotal: 91020,
+      calculatedTax: 4120,
+      calculatedTotal: 95140,
+      taxDiscrepancy: 0,
+      formula: "Subtotal ($91,020.00) + Tax ($4,120.00) = $95,140.00"
+    },
+    lineItems: [
+      {
+        itemId: "FURN_8999",
+        description: "Three-seat Sofa (Steel Grey)",
+        orderedQty: 1,
+        deliveredQty: 1,
+        invoicedQty: 1,
+        poUnitPrice: 970,
+        invoiceUnitPrice: 970,
+        contractUnitPrice: 970,
+        currency: "USD",
+        status: "MATCHED"
+      },
+      {
+        itemId: "FURN_8998",
+        description: "Three-seat Sofa (Steel Grey Colour)",
+        orderedQty: 3,
+        deliveredQty: 3,
+        invoicedQty: 3,
+        poUnitPrice: 1270,
+        invoiceUnitPrice: 1270,
+        contractUnitPrice: 1270,
+        currency: "USD",
+        status: "MATCHED"
+      },
+      {
+        itemId: "FURN_89945",
+        description: "Three-seat Sofa (Steel Grey Colour)",
+        orderedQty: 3,
+        deliveredQty: 3,
+        invoicedQty: 3,
+        poUnitPrice: 1450,
+        invoiceUnitPrice: 1450,
+        contractUnitPrice: 1450,
+        currency: "USD",
+        status: "MATCHED"
+      },
+      {
+        itemId: "FURN_8999A",
+        description: "Three-seat Modular Lounge Sofa",
+        orderedQty: 7,
+        deliveredQty: 5,
+        invoicedQty: 7, // 2 unreceived units @ $1,200 = $2,400 overbill
+        poUnitPrice: 1200,
+        invoiceUnitPrice: 1200,
+        contractUnitPrice: 1200,
+        currency: "USD",
+        status: "QTY_OVERBILL"
+      },
+      {
+        itemId: "FURN_8999S",
+        description: "Three-seat Sofa with Recliner Section",
+        orderedQty: 5,
+        deliveredQty: 5,
+        invoicedQty: 5,
+        poUnitPrice: 1350,
+        invoiceUnitPrice: 1500, // $150 above contract rate @ 5 units = $750 price violation
+        contractUnitPrice: 1350,
+        currency: "USD",
+        status: "PRICE_MISMATCH"
+      }
+    ],
+    sqlQueryExecuted: `
+SELECT 
+  po.po_id, po.supplier_id, 'Multi-Line Furnishings' AS item, po.currency,
+  SUM(del.delivered_qty) AS delivered_qty, SUM(inv.invoiced_qty) AS invoiced_qty
+FROM purchase_orders po
+LEFT JOIN deliveries del ON po.po_id = del.po_id
+LEFT JOIN invoices inv ON po.po_id = inv.po_id
+WHERE po.po_id = 'PO-2005'
+GROUP BY po.po_id;
+    `.trim(),
+    sourceRefs: [
+      {
+        label: "Purchase Order",
+        file: "purchase_orders.csv",
+        row: 8,
+        column: "ordered_qty",
+        value: 19
+      },
+      {
+        label: "Delivery Receipt Note",
+        file: "deliveries.csv",
+        row: 8,
+        column: "delivered_qty",
+        value: 17
+      },
+      {
+        label: "Supplier Invoice",
+        file: "invoices.csv",
+        row: 9,
+        column: "invoiced_qty",
+        value: 19
+      }
+    ]
   }
 };

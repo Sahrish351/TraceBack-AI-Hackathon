@@ -369,6 +369,16 @@ const STATIC_POS: PurchaseOrderItem[] = [
     currency: "USD",
     orderDate: "2026-10-04",
     demoBadge: "Duplicate Invoice ($1,000)"
+  },
+  {
+    poId: "PO-2005",
+    supplierId: "Lita Co., Ltd. (Braintec)",
+    item: "Executive Furnishings & Seating (5 Items)",
+    orderedQty: 19,
+    unitPrice: 0,
+    currency: "USD",
+    orderDate: "2026-10-18",
+    demoBadge: "Multi-Item Discrepancy ($3,150)"
   }
 ];
 
@@ -510,6 +520,315 @@ function getStaticInvestigation(poId: string): InvestigationResult {
         deliveries: { loaded: true, rowCount: 5, file: "deliveries.csv" },
         invoices: { loaded: true, rowCount: 6, file: "invoices.csv" },
         contractPrices: { loaded: true, rowCount: 5, file: "contract_prices.csv" }
+      },
+      reviewDecision: existingReview
+    };
+  }
+
+  if (poId === "PO-2005") {
+    return {
+      poId: "PO-2005",
+      supplierId: "Lita Co., Ltd. (Braintec)",
+      item: "Executive Furnishings & Seating Consignment",
+      summary: {
+        poId: "PO-2005",
+        supplierId: "Lita Co., Ltd. (Braintec)",
+        item: "Executive Furnishings & Seating Consignment",
+        totalFinancialImpact: 3150,
+        currency: "USD",
+        discrepancies: [
+          {
+            id: "DISC-QTY-PO-2005-FURN_8999A",
+            type: "QTY_OVERBILL",
+            severity: "high",
+            field: "line_items.FURN_8999A.qty",
+            itemIdentifier: "FURN_8999A",
+            sourceA: {
+              label: "Invoice INV/2025/10/0003 Line 4 Invoiced Qty",
+              file: "invoices.csv",
+              row: 9,
+              column: "invoiced_qty",
+              value: 7
+            },
+            sourceB: {
+              label: "Delivery DN-2025-089 Received Qty",
+              file: "deliveries.csv",
+              row: 8,
+              column: "delivered_qty",
+              value: 5
+            },
+            delta: 2,
+            financialImpact: 2400,
+            currency: "USD",
+            reason: "Item FURN_8999A (Three-seat Modular Lounge Sofa): Invoice bills for 7 units, but delivery receipt confirms receipt of only 5 units (2 unreceived units billed).",
+            confidence: 0.98,
+            remediationHint: "Request credit memo for 2 unreceived units of FURN_8999A at $1,200 ($2,400).",
+            calculation: {
+              formula: "(7 invoiced - 5 received) × $1,200 = $2,400",
+              itemIdentifier: "FURN_8999A",
+              expectedQty: 5,
+              actualQty: 7,
+              expectedUnitPrice: 1200,
+              actualUnitPrice: 1200,
+              deltaQty: 2,
+              subtotalImpact: 2400,
+              currency: "USD"
+            }
+          },
+          {
+            id: "DISC-PRICE-PO-2005-FURN_8999S",
+            type: "PRICE_ABOVE_CONTRACT",
+            severity: "high",
+            field: "line_items.FURN_8999S.unit_price",
+            itemIdentifier: "FURN_8999S",
+            sourceA: {
+              label: "Invoice INV/2025/10/0003 Unit Price",
+              file: "invoices.csv",
+              row: 9,
+              column: "unit_price",
+              value: 1500
+            },
+            sourceB: {
+              label: "Contract Master Price for FURN_8999S",
+              file: "contract_prices.csv",
+              row: 8,
+              column: "contract_unit_price",
+              value: 1350
+            },
+            delta: 150,
+            financialImpact: 750,
+            currency: "USD",
+            reason: "Item FURN_8999S: Billed price of $1,500/unit exceeds contract agreed rate of $1,350/unit by $150 across 5 delivered units.",
+            confidence: 0.95,
+            remediationHint: "Adjust line item unit rate from $1,500 down to contracted baseline $1,350. Credit $750.",
+            calculation: {
+              formula: "5 units × ($1,500 - $1,350) = $750",
+              itemIdentifier: "FURN_8999S",
+              expectedUnitPrice: 1350,
+              actualUnitPrice: 1500,
+              deltaPrice: 150,
+              subtotalImpact: 750,
+              currency: "USD"
+            }
+          }
+        ],
+        discrepancyCount: 2,
+        status: "FLAGGED_FOR_REVIEW",
+        confidenceScore: 0.96,
+        auditTimestamp: new Date().toISOString()
+      },
+      discrepancies: [
+        {
+          id: "DISC-QTY-PO-2005-FURN_8999A",
+          type: "QTY_OVERBILL",
+          severity: "high",
+          field: "line_items.FURN_8999A.qty",
+          itemIdentifier: "FURN_8999A",
+          sourceA: {
+            label: "Invoice INV/2025/10/0003 Line 4 Invoiced Qty",
+            file: "invoices.csv",
+            row: 9,
+            column: "invoiced_qty",
+            value: 7
+          },
+          sourceB: {
+            label: "Delivery DN-2025-089 Received Qty",
+            file: "deliveries.csv",
+            row: 8,
+            column: "delivered_qty",
+            value: 5
+          },
+          delta: 2,
+          financialImpact: 2400,
+          currency: "USD",
+          reason: "Item FURN_8999A: Invoice bills for 7 units, but delivery receipt confirms receipt of only 5 units (2 unreceived units billed).",
+          confidence: 0.98,
+          remediationHint: "Request credit memo for 2 unreceived units of FURN_8999A at $1,200 ($2,400).",
+          calculation: {
+            formula: "(7 invoiced - 5 received) × $1,200 = $2,400",
+            itemIdentifier: "FURN_8999A",
+            expectedQty: 5,
+            actualQty: 7,
+            expectedUnitPrice: 1200,
+            actualUnitPrice: 1200,
+            deltaQty: 2,
+            subtotalImpact: 2400,
+            currency: "USD"
+          }
+        },
+        {
+          id: "DISC-PRICE-PO-2005-FURN_8999S",
+          type: "PRICE_ABOVE_CONTRACT",
+          severity: "high",
+          field: "line_items.FURN_8999S.unit_price",
+          itemIdentifier: "FURN_8999S",
+          sourceA: {
+            label: "Invoice INV/2025/10/0003 Unit Price",
+            file: "invoices.csv",
+            row: 9,
+            column: "unit_price",
+            value: 1500
+          },
+          sourceB: {
+            label: "Contract Master Price for FURN_8999S",
+            file: "contract_prices.csv",
+            row: 8,
+            column: "contract_unit_price",
+            value: 1350
+          },
+          delta: 150,
+          financialImpact: 750,
+          currency: "USD",
+          reason: "Item FURN_8999S: Billed price of $1,500/unit exceeds contract agreed rate of $1,350/unit by $150 across 5 delivered units.",
+          confidence: 0.95,
+          remediationHint: "Adjust line item unit rate from $1,500 down to contracted baseline $1,350. Credit $750.",
+          calculation: {
+            formula: "5 units × ($1,500 - $1,350) = $750",
+            itemIdentifier: "FURN_8999S",
+            expectedUnitPrice: 1350,
+            actualUnitPrice: 1500,
+            deltaPrice: 150,
+            subtotalImpact: 750,
+            currency: "USD"
+          }
+        }
+      ],
+      unifiedRecord: {
+        poId: "PO-2005",
+        supplierId: "Lita Co., Ltd. (Braintec)",
+        item: "Executive Furnishings & Seating Consignment",
+        currency: "USD",
+        orderedQty: 19,
+        deliveredQty: 17,
+        invoicedQty: 19,
+        poUnitPrice: 0,
+        invoiceUnitPrice: 0,
+        contractUnitPrice: 0,
+        fees: 0,
+        orderDate: "2026-10-18",
+        deliveryDate: "2026-10-23",
+        invoiceDate: "2026-10-28",
+        warehouse: "WH-PACIFIC-01",
+        invoiceId: "INV/2025/10/0003",
+        deliveryId: "DN-2025-089",
+        financialSummary: {
+          subtotal: 91020,
+          taxRate: 0.04526,
+          taxAmount: 4120,
+          totalAmount: 95140,
+          currency: "USD",
+          calculatedSubtotal: 91020,
+          calculatedTax: 4120,
+          calculatedTotal: 95140,
+          taxDiscrepancy: 0,
+          formula: "Subtotal ($91,020.00) + Tax ($4,120.00) = $95,140.00"
+        },
+        lineItems: [
+          {
+            itemId: "FURN_8999",
+            description: "Three-seat Sofa (Steel Grey)",
+            orderedQty: 1,
+            deliveredQty: 1,
+            invoicedQty: 1,
+            poUnitPrice: 970,
+            invoiceUnitPrice: 970,
+            contractUnitPrice: 970,
+            currency: "USD",
+            subtotal: 970,
+            status: "MATCHED"
+          },
+          {
+            itemId: "FURN_8998",
+            description: "Three-seat Sofa (Steel Grey Colour)",
+            orderedQty: 3,
+            deliveredQty: 3,
+            invoicedQty: 3,
+            poUnitPrice: 1270,
+            invoiceUnitPrice: 1270,
+            contractUnitPrice: 1270,
+            currency: "USD",
+            subtotal: 3810,
+            status: "MATCHED"
+          },
+          {
+            itemId: "FURN_89945",
+            description: "Three-seat Sofa (Steel Grey Colour)",
+            orderedQty: 3,
+            deliveredQty: 3,
+            invoicedQty: 3,
+            poUnitPrice: 1450,
+            invoiceUnitPrice: 1450,
+            contractUnitPrice: 1450,
+            currency: "USD",
+            subtotal: 4350,
+            status: "MATCHED"
+          },
+          {
+            itemId: "FURN_8999A",
+            description: "Three-seat Modular Lounge Sofa",
+            orderedQty: 7,
+            deliveredQty: 5,
+            invoicedQty: 7,
+            poUnitPrice: 1200,
+            invoiceUnitPrice: 1200,
+            contractUnitPrice: 1200,
+            currency: "USD",
+            subtotal: 8400,
+            status: "QTY_OVERBILL"
+          },
+          {
+            itemId: "FURN_8999S",
+            description: "Three-seat Sofa with Recliner Section",
+            orderedQty: 5,
+            deliveredQty: 5,
+            invoicedQty: 5,
+            poUnitPrice: 1350,
+            invoiceUnitPrice: 1500,
+            contractUnitPrice: 1350,
+            currency: "USD",
+            subtotal: 7500,
+            status: "PRICE_MISMATCH"
+          }
+        ],
+        sqlQueryExecuted: "SELECT * FROM cross_source_virtual_invoices WHERE po_id = 'PO-2005';",
+        sourceRefs: [
+          { label: "Purchase Order", file: "purchase_orders.csv", row: 8, column: "ordered_qty", value: 19 },
+          { label: "Delivery Receipt Note", file: "deliveries.csv", row: 8, column: "delivered_qty", value: 17 },
+          { label: "Supplier Invoice", file: "invoices.csv", row: 9, column: "invoiced_qty", value: 19 }
+        ]
+      },
+      missionTrace: {
+        missionId: "MSN-MULTI-2005",
+        objective: "Multi-item reconciliation for PO-2005 / INV/2025/10/0003 across 5 distinct line items.",
+        poId: "PO-2005",
+        totalDurationMs: 142,
+        hMemKey: "mission:PO-2005:MSN-MULTI-2005",
+        steps: [
+          { step: 1, name: "scoutIntent", thought: "Ingesting multi-item invoice INV/2025/10/0003. Identifying 5 distinct line items.", action: "Parsed 5 line items.", observation: "Line item scope identified: FURN_8999, FURN_8998, FURN_89945, FURN_8999A, FURN_8999S.", durationMs: 16, status: "completed" },
+          { step: 2, name: "fetchUnifiedData", thought: "Virtualizing cross-source records across line items, warehouse delivery notes, and contract catalogs.", action: "Executed 4-way federated join.", observation: "5 items matched across PO, delivery receipt DN-2025-089, and catalog.", durationMs: 44, status: "completed" },
+          { step: 3, name: "detectDiscrepancies", thought: "Running item-level reconciliation and calculation breakdowns.", action: "Computed line item variances.", observation: "Detected 2 variances: FURN_8999A overbill (2 units * $1,200 = $2,400) and FURN_8999S price variance ($150 * 5 = $750). Total: $3,150.", durationMs: 25, status: "completed" },
+          { step: 4, name: "verifyTaxAndSubtotal", thought: "Checking mathematical integrity of subtotal ($91,020) and statutory tax ($4,120). Total: $95,140.", action: "Verified financial totals.", observation: "Subtotal and tax calculations confirmed mathematically valid.", durationMs: 18, status: "completed" },
+          { step: 5, name: "draftExplanation", thought: "Generating transparent audit summary and evidence trail.", action: "Drafted explanation.", observation: "Explanation ready for human reviewer oversight.", durationMs: 39, status: "completed" }
+        ]
+      },
+      explanation: {
+        executiveSummary: "Multi-item reconciliation identified $3,150 in potential discrepancies for Invoice INV/2025/10/0003 (Lita Co., Ltd. / Braintec). Findings: (1) FURN_8999A billed for 7 units but warehouse confirmed 5 (2 unreceived units = $2,400 potential overbill); (2) FURN_8999S billed at $1,500/unit exceeding $1,350 contract rate ($750 variance). Status: Potential Discrepancy — Requires Human Review.",
+        auditRationale: "TraceBack AI verified 5 line items totaling $95,140.00. While 3 lines matched perfectly, line item FURN_8999A exhibits quantity overbilling and line item FURN_8999S exhibits an unauthorized unit price increase.",
+        supplierEmail: {
+          to: "ap-audit@litaco.global",
+          recipientName: "Lita Co., Ltd. Accounts Receivable",
+          subject: "Line Item Reconciliation Notice: Invoice INV/2025/10/0003 [Potential Discrepancy: $3,150.00]",
+          claimAmount: "$3,150.00",
+          body: "Dear Lita Co., Ltd. Accounts Receivable Team,\n\nWe have completed our automated line-item reconciliation for Invoice INV/2025/10/0003 (PO-2005) covering executive furnishings.\n\nOur cross-source audit identified two potential discrepancies totaling $3,150.00:\n\n1. ITEM FURN_8999A: Invoiced for 7 units @ $1,200.00, but delivery receipt DN-2025-089 confirms receipt of 5 units (2 unreceived units billed = $2,400.00).\n2. ITEM FURN_8999S: Invoiced at $1,500.00/unit against agreed contract rate of $1,350.00/unit across 5 delivered units ($750.00).\n\nPlease provide proof of physical delivery for the remaining 2 units of FURN_8999A or issue a revised invoice/credit note for $3,150.00.\n\nSincerely,\nProcurement Audit Team\nTraceBack AI"
+        },
+        modelUsed: "meta/llama-3.1-8b-instruct (NVIDIA NIM Fallback Engine)",
+        isLive: false
+      },
+      dataSourcesStatus: {
+        purchaseOrders: { loaded: true, rowCount: 6, file: "purchase_orders.csv" },
+        deliveries: { loaded: true, rowCount: 6, file: "deliveries.csv" },
+        invoices: { loaded: true, rowCount: 7, file: "invoices.csv" },
+        contractPrices: { loaded: true, rowCount: 6, file: "contract_prices.csv" }
       },
       reviewDecision: existingReview
     };

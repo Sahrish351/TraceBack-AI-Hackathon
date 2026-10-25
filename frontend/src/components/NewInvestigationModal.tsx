@@ -234,3 +234,4 @@ export const NewInvestigationModal: React.FC<NewInvestigationModalProps> = ({
     </div>
   );
 };
+

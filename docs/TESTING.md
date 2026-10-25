@@ -49,15 +49,42 @@ All reconciliation rules and calculations in TraceBack AI are executed determini
 - **Duplicate Invoice Detection:** Confirms multi-invoice matching logic for duplicate scopes.
 - **End-to-End Cross-Source Integration:** Executes the complete live query join via `ZetarisClient` in-memory SQLite virtual schema and runs the `MeterlessMission` agent relay for `PO-1042`.
 
+### 2.3 Phase 4 Multi-Item & Complex Reconciliations Suite (8 Tests)
+- **Multi-Line Item Invoices:** Reconciles an invoice containing multiple distinct line items against individual purchase order lines, delivery notes, and contract catalogs (e.g., Furniture Consignment with standing desk, ergonomic mesh chair, and LED lamp).
+- **Partial Deliveries:** Distinguishes between under-deliveries where the supplier honestly bills only received goods (no financial loss; logs backorder quantity) vs. overbilling for unreceived goods.
+- **Combined Item-Level Quantity & Price Variances:** Reconciles line items suffering from both unreceived units and rate variance without double-counting.
+- **Subtotal & Statutory Tax Calculations:** Evaluates net subtotal, computes statutory sales/VAT tax against agreed rate schedules (e.g., 10% tax on $10,000 subtotal is $1,000), and flags billing tax calculation discrepancies (e.g., $1,250 billed tax yields a $250 variance).
+- **Data Integrity & Invalid Values:** Guards against negative counts or NaN values in line items, outputting transparent error descriptions.
+- **Duplicate Line Items:** Detects duplicate line entries within the same invoice for the same item code and calculates the duplicated financial impact.
+- **Multi-Item Concordance (Zero Discrepancy):** Verifies clean zero-discrepancy status across multiple line items.
+- **Currency Safety & Conflict Guard:** Rejects cross-currency blending (e.g. EUR item on a USD order) without an authorized exchange rate schedule.
+
 ---
 
-## 3. Test Execution Results (Latest Run)
+## 3. Supported Features & Known Limitations
+
+### Supported Features
+1. **Multi-Item Line Reconciliation:** Supports arbitrary numbers of line items with per-item 4-way matching.
+2. **Transparent Mathematical Formulas:** Every discrepancy emits a human-readable formula string (e.g., `(120 invoiced - 100 received) × Rs 500 = Rs 10,000`).
+3. **Partial Delivery Distinctions:** Clearly separates legitimate partial fulfillment from overbilling.
+4. **Statutory Tax Reconciliation:** Verifies invoiced tax vs. calculated statutory tax based on net line subtotal.
+5. **Non-Double-Counting Engine:** Price escalation is strictly evaluated against delivered units, preventing inflated claims.
+6. **Currency Protection:** Rejects mathematical blending of disparate currencies.
+7. **Human Oversight First:** Findings are consistently labelled *"Potential Discrepancy — Requires Human Review"*.
+
+### Known Limitations
+1. **Foreign Exchange Conversion:** Mismatched currencies are flagged for auditor review rather than auto-converted using external live FX feeds.
+2. **Automated Account Debiting:** TraceBack AI is an audit and evidence reconciliation system; it does not directly debit or modify enterprise ERP general ledgers.
+
+---
+
+## 4. Test Execution Results (Latest Run)
 
 ```text
-✓ tests/compare.test.ts (16 tests) 467ms
+✓ tests/compare.test.ts (24 tests) 348ms
 
 Test Files  1 passed (1)
-     Tests  16 passed (16)
-  Duration  1.59s
+     Tests  24 passed (24)
+  Duration  1.43s
 ```
 

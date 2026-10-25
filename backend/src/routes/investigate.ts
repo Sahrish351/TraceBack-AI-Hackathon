@@ -84,6 +84,19 @@ router.get("/pos", (_req: Request, res: Response) => {
           : "Audit Pending"
     }));
 
+    if (!pos.some((p) => p.poId === "PO-2005")) {
+      pos.push({
+        poId: "PO-2005",
+        supplierId: "Lita Co., Ltd. (Braintec)",
+        item: "Executive Furnishings & Seating (5 Items)",
+        orderedQty: 19,
+        unitPrice: 0,
+        currency: "USD",
+        orderDate: "2026-10-18",
+        demoBadge: "Multi-Item Discrepancy ($3,150)"
+      });
+    }
+
     res.json({ purchaseOrders: pos });
   } catch (err: any) {
     logger.error({ err }, "Failed to fetch PO list");

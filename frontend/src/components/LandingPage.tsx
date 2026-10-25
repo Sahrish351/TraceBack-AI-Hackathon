@@ -431,3 +431,4 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenWorkspace, onSel
     </div>
   );
 };
+

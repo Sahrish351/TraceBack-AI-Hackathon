@@ -156,3 +156,4 @@ export const IntegrationsScreen: React.FC<IntegrationsScreenProps> = ({
     </div>
   );
 };
+

@@ -295,3 +295,425 @@ describe("TraceBack AI - Phase 2 Canonical Scenario & Comprehensive Regression S
     expect(result.explanation.executiveSummary).toContain("Rs 10,000");
   });
 });
+
+describe("TraceBack AI - Phase 4: Multi-Item Invoices & Complex Reconciliations Suite", () => {
+  it("should accurately reconcile multi-line item invoices with item-level matching", () => {
+    const multiItemRecord: UnifiedRecord = {
+      poId: "PO-MULTI-01",
+      supplierId: "Global Office Systems",
+      item: "Multi-Item Furniture Consignment",
+      currency: "USD",
+      orderedQty: 170,
+      deliveredQty: 160,
+      invoicedQty: 170,
+      poUnitPrice: 0,
+      invoiceUnitPrice: 0,
+      contractUnitPrice: 0,
+      fees: 0,
+      orderDate: "2026-10-25",
+      deliveryDate: "2026-10-25",
+      invoiceDate: "2026-10-25",
+      warehouse: "WH-EAST",
+      invoiceId: "INV-MULTI-01",
+      deliveryId: "DN-MULTI-01",
+      sqlQueryExecuted: "SELECT * FROM federated_multi_items;",
+      sourceRefs: [],
+      lineItems: [
+        {
+          itemId: "DESK-101",
+          description: "Standing Executive Desk",
+          orderedQty: 100,
+          deliveredQty: 100,
+          invoicedQty: 100,
+          poUnitPrice: 50,
+          invoiceUnitPrice: 50,
+          contractUnitPrice: 50
+        },
+        {
+          itemId: "CHAIR-202",
+          description: "Ergonomic Mesh Chair",
+          orderedQty: 50,
+          deliveredQty: 40,
+          invoicedQty: 50, // 10 unreceived units overbilled @ $80 = $800
+          poUnitPrice: 80,
+          invoiceUnitPrice: 80,
+          contractUnitPrice: 80
+        },
+        {
+          itemId: "LAMP-303",
+          description: "LED Desk Lamp",
+          orderedQty: 20,
+          deliveredQty: 20,
+          invoicedQty: 20,
+          poUnitPrice: 100,
+          invoiceUnitPrice: 120, // $20 above contract @ 20 units = $400
+          contractUnitPrice: 100
+        }
+      ]
+    };
+
+    const discrepancies = compareRecords(multiItemRecord);
+    expect(discrepancies.length).toBe(2);
+
+    const qtyDisc = discrepancies.find((d) => d.type === "QTY_OVERBILL" && d.itemIdentifier === "CHAIR-202");
+    expect(qtyDisc).toBeDefined();
+    expect(qtyDisc?.delta).toBe(10);
+    expect(qtyDisc?.financialImpact).toBe(800);
+    expect(qtyDisc?.calculation?.formula).toContain("(50 invoiced - 40 received) × $80 = $800");
+
+    const priceDisc = discrepancies.find((d) => d.type === "PRICE_ABOVE_CONTRACT" && d.itemIdentifier === "LAMP-303");
+    expect(priceDisc).toBeDefined();
+    expect(priceDisc?.delta).toBe(20);
+    expect(priceDisc?.financialImpact).toBe(400);
+    expect(priceDisc?.calculation?.formula).toContain("20 units × ($120 - $100) = $400");
+
+    const summary = buildAnalysisSummary(multiItemRecord, discrepancies);
+    expect(summary.totalFinancialImpact).toBe(1200);
+    expect(summary.status).toBe("FLAGGED_FOR_REVIEW");
+    expect(summary.discrepancyCount).toBe(2);
+  });
+
+  it("should detect partial deliveries where supplier honestly bills only received goods (no overbilling)", () => {
+    const partialRecord: UnifiedRecord = {
+      poId: "PO-PARTIAL-01",
+      supplierId: "Apex Components",
+      item: "Industrial Fasteners",
+      currency: "USD",
+      orderedQty: 100,
+      deliveredQty: 60,
+      invoicedQty: 60, // Billed matches delivered!
+      poUnitPrice: 40,
+      invoiceUnitPrice: 40,
+      contractUnitPrice: 40,
+      fees: 0,
+      orderDate: "2026-10-25",
+      deliveryDate: "2026-10-25",
+      invoiceDate: "2026-10-25",
+      warehouse: "WH-02",
+      invoiceId: "INV-PARTIAL-01",
+      deliveryId: "DN-PARTIAL-01",
+      sqlQueryExecuted: "SELECT 1;",
+      sourceRefs: [],
+      lineItems: [
+        {
+          itemId: "FASTENER-90",
+          description: "High-Tensile Bolt Set",
+          orderedQty: 100,
+          deliveredQty: 60,
+          invoicedQty: 60,
+          poUnitPrice: 40,
+          invoiceUnitPrice: 40,
+          contractUnitPrice: 40
+        }
+      ]
+    };
+
+    const discrepancies = compareRecords(partialRecord);
+    expect(discrepancies.length).toBe(1);
+
+    const partialDisc = discrepancies[0];
+    expect(partialDisc.type).toBe("PARTIAL_DELIVERY");
+    expect(partialDisc.delta).toBe(40);
+    expect(partialDisc.financialImpact).toBe(0); // Informational; no loss
+    expect(partialDisc.reason).toContain("Received 60 of 100 ordered units");
+    expect(partialDisc.calculation?.formula).toContain("40 units pending on backorder");
+
+    const summary = buildAnalysisSummary(partialRecord, discrepancies);
+    expect(summary.totalFinancialImpact).toBe(0);
+  });
+
+  it("should reconcile quantity and price mismatches on the same line item without double counting", () => {
+    const mixedLineRecord: UnifiedRecord = {
+      poId: "PO-MIXED-01",
+      supplierId: "Bright Manufacturing",
+      item: "Precision Motors",
+      currency: "USD",
+      orderedQty: 50,
+      deliveredQty: 40,
+      invoicedQty: 50,
+      poUnitPrice: 60,
+      invoiceUnitPrice: 60,
+      contractUnitPrice: 50,
+      fees: 0,
+      orderDate: "2026-10-25",
+      deliveryDate: "2026-10-25",
+      invoiceDate: "2026-10-25",
+      warehouse: "WH-03",
+      invoiceId: "INV-MIXED-01",
+      deliveryId: "DN-MIXED-01",
+      sqlQueryExecuted: "SELECT 1;",
+      sourceRefs: [],
+      lineItems: [
+        {
+          itemId: "MOTOR-V8",
+          description: "Brushless Servo Motor",
+          orderedQty: 50,
+          deliveredQty: 40,
+          invoicedQty: 50, // 10 unreceived units * $60 = $600
+          poUnitPrice: 60,
+          invoiceUnitPrice: 60, // $10 above contract * 40 delivered units = $400
+          contractUnitPrice: 50
+        }
+      ]
+    };
+
+    const discrepancies = compareRecords(mixedLineRecord);
+    expect(discrepancies.length).toBe(2);
+
+    const qtyDisc = discrepancies.find((d) => d.type === "QTY_OVERBILL");
+    const priceDisc = discrepancies.find((d) => d.type === "PRICE_ABOVE_CONTRACT");
+
+    expect(qtyDisc?.financialImpact).toBe(600);
+    expect(priceDisc?.financialImpact).toBe(400);
+
+    // Total must be $600 + $400 = $1,000 (never $1,100 from double-counting unreceived units)
+    const summary = buildAnalysisSummary(mixedLineRecord, discrepancies);
+    expect(summary.totalFinancialImpact).toBe(1000);
+  });
+
+  it("should calculate subtotal, statutory tax, and detect tax calculation discrepancies transparently", () => {
+    const taxRecord: UnifiedRecord = {
+      poId: "PO-TAX-01",
+      supplierId: "TechCorp Logistics",
+      item: "Server Hardware Consignment",
+      currency: "USD",
+      orderedQty: 10,
+      deliveredQty: 10,
+      invoicedQty: 10,
+      poUnitPrice: 1000,
+      invoiceUnitPrice: 1000,
+      contractUnitPrice: 1000,
+      fees: 0,
+      orderDate: "2026-10-25",
+      deliveryDate: "2026-10-25",
+      invoiceDate: "2026-10-25",
+      warehouse: "WH-DC",
+      invoiceId: "INV-TAX-01",
+      deliveryId: "DN-TAX-01",
+      sqlQueryExecuted: "SELECT 1;",
+      sourceRefs: [],
+      taxRate: 0.10, // 10% tax rate on $10,000 subtotal should be $1,000
+      taxAmount: 1250, // Supplier erroneously billed $1,250 ($250 overcharge)
+      lineItems: [
+        {
+          itemId: "SRV-RACK",
+          description: "Rack Server 2U",
+          orderedQty: 10,
+          deliveredQty: 10,
+          invoicedQty: 10,
+          poUnitPrice: 1000,
+          invoiceUnitPrice: 1000,
+          contractUnitPrice: 1000
+        }
+      ]
+    };
+
+    const discrepancies = compareRecords(taxRecord);
+    expect(discrepancies.length).toBe(1);
+
+    const taxDisc = discrepancies[0];
+    expect(taxDisc.type).toBe("TAX_MISMATCH");
+    expect(taxDisc.delta).toBe(250);
+    expect(taxDisc.financialImpact).toBe(250);
+    expect(taxDisc.calculation?.formula).toContain("Billed Tax $1,250 - Expected Tax (10% × $10,000 = $1,000) = $250");
+
+    const summary = buildAnalysisSummary(taxRecord, discrepancies);
+    expect(summary.totalFinancialImpact).toBe(250);
+    expect(taxRecord.financialSummary?.subtotal).toBe(10000);
+    expect(taxRecord.financialSummary?.calculatedTax).toBe(1000);
+    expect(taxRecord.financialSummary?.taxDiscrepancy).toBe(250);
+  });
+
+  it("should safely flag invalid negative or unparsable values as data integrity discrepancies", () => {
+    const invalidRecord: UnifiedRecord = {
+      poId: "PO-INVALID-DATA",
+      supplierId: "Faulty Vendor",
+      item: "Testing Goods",
+      currency: "USD",
+      orderedQty: 10,
+      deliveredQty: 10,
+      invoicedQty: 10,
+      poUnitPrice: 100,
+      invoiceUnitPrice: 100,
+      contractUnitPrice: 100,
+      fees: 0,
+      orderDate: "2026-10-25",
+      deliveryDate: "2026-10-25",
+      invoiceDate: "2026-10-25",
+      warehouse: "WH-01",
+      invoiceId: "INV-ERR-01",
+      deliveryId: "DN-ERR-01",
+      sqlQueryExecuted: "SELECT 1;",
+      sourceRefs: [],
+      lineItems: [
+        {
+          itemId: "ITEM-NEG",
+          description: "Defective Entry",
+          orderedQty: 50,
+          deliveredQty: 50,
+          invoicedQty: -25, // Negative quantity error
+          poUnitPrice: 100,
+          invoiceUnitPrice: 100,
+          contractUnitPrice: 100
+        }
+      ]
+    };
+
+    const discrepancies = compareRecords(invalidRecord);
+    expect(discrepancies.length).toBe(1);
+    expect(discrepancies[0].type).toBe("MISSING_EVIDENCE");
+    expect(discrepancies[0].reason).toContain("Invalid or unparsable quantity value");
+  });
+
+  it("should detect duplicate line items inside the same invoice", () => {
+    const duplicateLineRecord: UnifiedRecord = {
+      poId: "PO-DUP-LINE",
+      supplierId: "Duplicate Services Inc",
+      item: "Multi-Pack Goods",
+      currency: "USD",
+      orderedQty: 10,
+      deliveredQty: 10,
+      invoicedQty: 20,
+      poUnitPrice: 150,
+      invoiceUnitPrice: 150,
+      contractUnitPrice: 150,
+      fees: 0,
+      orderDate: "2026-10-25",
+      deliveryDate: "2026-10-25",
+      invoiceDate: "2026-10-25",
+      warehouse: "WH-01",
+      invoiceId: "INV-DUP-LINE",
+      deliveryId: "DN-DUP-LINE",
+      sqlQueryExecuted: "SELECT 1;",
+      sourceRefs: [],
+      lineItems: [
+        {
+          itemId: "CABLE-OPTIC",
+          description: "Optical Fiber Reel",
+          orderedQty: 10,
+          deliveredQty: 10,
+          invoicedQty: 10,
+          poUnitPrice: 150,
+          invoiceUnitPrice: 150,
+          contractUnitPrice: 150
+        },
+        {
+          itemId: "CABLE-OPTIC", // Duplicate entry for the same item ID!
+          description: "Optical Fiber Reel (Repeated)",
+          orderedQty: 10,
+          deliveredQty: 10,
+          invoicedQty: 10,
+          poUnitPrice: 150,
+          invoiceUnitPrice: 150,
+          contractUnitPrice: 150
+        }
+      ]
+    };
+
+    const discrepancies = compareRecords(duplicateLineRecord);
+    const dupDisc = discrepancies.find((d) => d.type === "DUPLICATE_ITEM");
+    expect(dupDisc).toBeDefined();
+    expect(dupDisc?.delta).toBe(10);
+    expect(dupDisc?.financialImpact).toBe(1500);
+    expect(dupDisc?.reason).toContain("listed multiple times");
+  });
+
+  it("should produce a clean 0-discrepancy result for a fully concordant multi-item invoice", () => {
+    const cleanMultiRecord: UnifiedRecord = {
+      poId: "PO-CLEAN-MULTI",
+      supplierId: "Prime Office Supplies",
+      item: "Stationery and Peripherals",
+      currency: "USD",
+      orderedQty: 100,
+      deliveredQty: 100,
+      invoicedQty: 100,
+      poUnitPrice: 0,
+      invoiceUnitPrice: 0,
+      contractUnitPrice: 0,
+      fees: 0,
+      orderDate: "2026-10-25",
+      deliveryDate: "2026-10-25",
+      invoiceDate: "2026-10-25",
+      warehouse: "WH-01",
+      invoiceId: "INV-CLEAN-MULTI",
+      deliveryId: "DN-CLEAN-MULTI",
+      sqlQueryExecuted: "SELECT 1;",
+      sourceRefs: [],
+      taxRate: 0.05,
+      taxAmount: 35, // 5% of ($500 + $200 = $700) = $35
+      lineItems: [
+        {
+          itemId: "PAPER-A4",
+          description: "A4 Copy Paper Box",
+          orderedQty: 50,
+          deliveredQty: 50,
+          invoicedQty: 50,
+          poUnitPrice: 10,
+          invoiceUnitPrice: 10,
+          contractUnitPrice: 10
+        },
+        {
+          itemId: "PEN-GEL",
+          description: "Gel Ink Pens (Pack of 12)",
+          orderedQty: 50,
+          deliveredQty: 50,
+          invoicedQty: 50,
+          poUnitPrice: 4,
+          invoiceUnitPrice: 4,
+          contractUnitPrice: 4
+        }
+      ]
+    };
+
+    const discrepancies = compareRecords(cleanMultiRecord);
+    expect(discrepancies.length).toBe(0);
+
+    const summary = buildAnalysisSummary(cleanMultiRecord, discrepancies);
+    expect(summary.totalFinancialImpact).toBe(0);
+    expect(summary.status).toBe("CLEAN");
+    expect(summary.confidenceScore).toBe(1.0);
+  });
+
+  it("should prevent currency confusion when line item currency conflicts with PO currency", () => {
+    const currencyMismatchRecord: UnifiedRecord = {
+      poId: "PO-CURRENCY-CONFLICT",
+      supplierId: "European Logistics AG",
+      item: "Imported Components",
+      currency: "USD",
+      orderedQty: 20,
+      deliveredQty: 20,
+      invoicedQty: 20,
+      poUnitPrice: 100,
+      invoiceUnitPrice: 100,
+      contractUnitPrice: 100,
+      fees: 0,
+      orderDate: "2026-10-25",
+      deliveryDate: "2026-10-25",
+      invoiceDate: "2026-10-25",
+      warehouse: "WH-01",
+      invoiceId: "INV-EUR-01",
+      deliveryId: "DN-EUR-01",
+      sqlQueryExecuted: "SELECT 1;",
+      sourceRefs: [],
+      lineItems: [
+        {
+          itemId: "ITEM-EUR",
+          description: "Sensors billed in Euros",
+          orderedQty: 20,
+          deliveredQty: 20,
+          invoicedQty: 20,
+          poUnitPrice: 100,
+          invoiceUnitPrice: 100,
+          contractUnitPrice: 100,
+          currency: "EUR" // Mismatched currency!
+        }
+      ]
+    };
+
+    const discrepancies = compareRecords(currencyMismatchRecord);
+    const currDisc = discrepancies.find((d) => d.type === "CURRENCY_MISMATCH");
+    expect(currDisc).toBeDefined();
+    expect(currDisc?.financialImpact).toBe(0); // Cannot be added to USD without FX rate
+    expect(currDisc?.reason).toContain("differing from PO currency USD");
+  });
+});

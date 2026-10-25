@@ -151,3 +151,4 @@ export const InvestigationsListScreen: React.FC<InvestigationsListScreenProps> =
     </div>
   );
 };
+
