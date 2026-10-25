@@ -108,8 +108,13 @@ export const InvestigationsListScreen: React.FC<InvestigationsListScreenProps> =
                     <div className="flex items-center space-x-1.5">
                       <span>{po.poId}</span>
                       {isCanonical && (
-                        <span className="text-[9px] bg-[#C66A4A] text-white px-1.5 py-0.2 rounded font-bold uppercase">
+                        <span className="text-[9px] bg-[#C66A4A] text-white px-1.5 py-0.5 rounded font-bold uppercase">
                           Demo Case
+                        </span>
+                      )}
+                      {po.poId === "PO-2005" && (
+                        <span className="text-[9px] bg-[#246B52] text-white px-1.5 py-0.5 rounded font-bold uppercase">
+                          Multi-Item
                         </span>
                       )}
                     </div>

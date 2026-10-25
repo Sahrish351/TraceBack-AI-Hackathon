@@ -62,6 +62,19 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
         </div>
       </div>
 
+      {/* Demo Fixture Advisory Banner */}
+      <div className="bg-[#FAF8F3] border border-[#DCEBE1] rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-[#143D2F]">
+        <div className="flex items-center space-x-2.5">
+          <span className="w-2 h-2 rounded-full bg-[#246B52] animate-pulse shrink-0"></span>
+          <span>
+            <strong className="font-semibold">Demo Fixtures Active:</strong> All records (e.g. PO-1042 Northstar Office Supplies, PO-2005 Consignment) are simulated benchmark fixtures for hackathon verification and audit demonstration.
+          </span>
+        </div>
+        <span className="text-[11px] bg-[#EAF3ED] text-[#246B52] font-semibold px-2 py-0.5 rounded shrink-0">
+          Sample Data
+        </span>
+      </div>
+
       {/* 2. Top Metric Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Total Investigations */}

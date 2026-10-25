@@ -109,3 +109,15 @@ An audit of all external sponsor touchpoints was conducted and documented in `do
    - Blocker: Free developer API key (`nvapi-...`) not yet added to `.env`.
 4. **Cursor:**
    - Confirmed used for codebase creation, modular refactoring, test engineering, and prompt pack generation.
+
+
+---
+
+## 5. Milestone 4 — Demo & Submission Quality Improvements
+
+UI polish and transparency safeguards were verified and enhanced across all application screens:
+1. **Demo Fixture Advisory Banner:** Added prominent, dismissible benchmark advisory banner across the overview dashboard clearly informing hackathon evaluators that records are simulated benchmark datasets.
+2. **Investigation List Scope Badges:** Added clear visual tags distinguishing between canonical demo scenarios (`PO-1042` with Rs 10,000 potential discrepancy) and multi-item consignment cases (`PO-2005`).
+3. **Responsive Navigation & State Preservation:** Verified desktop sidebar collapsible behavior and mobile responsive views for table grids and evidence cards.
+4. **Transparent Terminology:** Verified that all discrepancy labels state *"Potential Discrepancy — Requires Human Review"* with zero accusations of fraud.
+5. **Human Review Actions:** Review decisions (`approve`, `reject`, `request_clarification`) cleanly record reviewer identity, timestamp, and audit notes into H-MEM storage.
