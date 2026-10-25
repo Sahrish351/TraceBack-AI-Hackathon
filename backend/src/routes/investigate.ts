@@ -18,6 +18,8 @@ export const router = Router();
  */
 router.get("/health", async (_req: Request, res: Response) => {
   const zetarisHealth = await zetarisClient.healthCheck();
+  const meterlessHealth = await MeterlessMission.getHealthStatus();
+  const nvidiaHealth = await nvidiaExplainer.getHealthStatus();
 
   res.json({
     status: "ok",
@@ -28,28 +30,38 @@ router.get("/health", async (_req: Request, res: Response) => {
     sponsorIntegrations: {
       zetaris: {
         layer: "Data Virtualization & Cross-Source Integration",
+        status: zetarisHealth.status,
         mode: zetarisHealth.mode,
         engine: zetarisHealth.engine,
         latencyMs: zetarisHealth.latencyMs,
-        isLive: isZetarisLive,
-        endpoint: config.zetarisApiUrl || "in-memory-sqlite-virtualizer"
+        isLive: zetarisHealth.mode === "live",
+        endpoint: zetarisHealth.endpoint || "in-memory-sqlite-virtualizer",
+        reason: zetarisHealth.reason
       },
       meterless: {
         layer: "Agent Mission Orchestration & H-MEM",
-        mode: isMeterlessLive ? "live" : "local-orchestrator",
-        isLive: isMeterlessLive,
-        architecture: "Scout Intent -> Relay Execution -> H-MEM Session Memory"
+        status: meterlessHealth.status,
+        mode: meterlessHealth.mode,
+        isLive: meterlessHealth.mode === "live",
+        architecture: meterlessHealth.architecture,
+        endpoint: meterlessHealth.endpoint,
+        reason: meterlessHealth.reason
       },
       nvidia: {
         layer: "Inference & Natural Language Generation",
-        model: config.nvidiaModel,
-        isLive: isNvidiaLive,
-        mode: isNvidiaLive ? "nvidia-nim-cloud" : "deterministic-fallback"
+        status: nvidiaHealth.status,
+        model: nvidiaHealth.model,
+        isLive: nvidiaHealth.mode === "live",
+        mode: nvidiaHealth.mode,
+        endpoint: nvidiaHealth.endpoint,
+        reason: nvidiaHealth.reason
       },
       cursor: {
         layer: "Developer Velocity & AI Agent Pair Programming",
+        status: "Local / demo mode (Audit Logged)",
         promptsLogged: true,
-        documentationPath: "docs/CURSOR_USAGE.md"
+        documentationPath: "docs/CURSOR_USAGE.md",
+        note: "Cursor used for pair programming; prompt transcripts logged."
       }
     }
   });

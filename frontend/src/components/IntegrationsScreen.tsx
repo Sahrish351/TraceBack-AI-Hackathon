@@ -1,5 +1,5 @@
 import React from "react";
-import { Database, Layers, Cpu, Code2, CheckCircle2, AlertTriangle, ShieldCheck, ExternalLink, RefreshCw } from "lucide-react";
+import { Database, Layers, Cpu, Code2, CheckCircle2, AlertTriangle, ShieldCheck, ExternalLink, RefreshCw, KeyRound, Server } from "lucide-react";
 import { SystemHealth } from "../types";
 
 interface IntegrationsScreenProps {
@@ -17,6 +17,48 @@ export const IntegrationsScreen: React.FC<IntegrationsScreenProps> = ({
   const meterless = systemHealth?.sponsorIntegrations.meterless;
   const nvidia = systemHealth?.sponsorIntegrations.nvidia;
   const cursor = systemHealth?.sponsorIntegrations.cursor;
+
+  const renderStatusPill = (status?: string) => {
+    const s = status || "Not configured";
+    if (s.includes("Connected and verified")) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3ED] text-[#246B52] border border-[#DCEBE1]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#246B52] mr-1.5"></span>
+          Connected & Verified
+        </span>
+      );
+    }
+    if (s.includes("Configured but not verified")) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#1E40AF] mr-1.5"></span>
+          Configured (Unverified)
+        </span>
+      );
+    }
+    if (s.includes("Blocked")) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FDF1ED] text-[#C66A4A] border border-[#F3C5B5]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#C66A4A] mr-1.5"></span>
+          Blocked by Credentials
+        </span>
+      );
+    }
+    if (s.includes("Local / demo mode")) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FAF8F3] text-[#143D2F] border border-[#DCEBE1]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#246B52] mr-1.5"></span>
+          Local / Demo Mode
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FAF8F3] text-[#667066] border border-[#E5E7E2]">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#8F9A8F] mr-1.5"></span>
+        Not Configured
+      </span>
+    );
+  };
 
   return (
     <div className="space-y-6 p-6 lg:p-8 max-w-7xl mx-auto w-full">
@@ -39,6 +81,15 @@ export const IntegrationsScreen: React.FC<IntegrationsScreenProps> = ({
         </button>
       </div>
 
+      {/* Honesty Policy Notice */}
+      <div className="p-4 rounded-xl bg-[#FAF8F3] border border-[#DCEBE1] flex items-start space-x-3 text-xs text-[#202720]">
+        <ShieldCheck className="w-4 h-4 text-[#246B52] shrink-0 mt-0.5" />
+        <div>
+          <span className="font-bold text-[#143D2F]">Hackathon Transparency Guarantee: </span>
+          Services display <span className="font-semibold text-[#246B52]">Connected and verified</span> only when confirmed by live network health checks. In the absence of live production credentials, TraceBack AI operates seamlessly via deterministic local adapters and in-memory data virtualization.
+        </div>
+      </div>
+
       {/* Integration Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Zetaris */}
@@ -50,22 +101,21 @@ export const IntegrationsScreen: React.FC<IntegrationsScreenProps> = ({
               </div>
               <div>
                 <h3 className="font-serif text-lg font-bold text-[#143D2F]">Zetaris</h3>
-                <span className="text-xs text-[#667066]">Data Virtualization Layer</span>
+                <span className="text-xs text-[#667066]">Cross-Source Data Virtualization</span>
               </div>
             </div>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-[#EAF3ED] text-[#246B52] border border-[#DCEBE1]">
-              Fixture Mode Active
-            </span>
+            {renderStatusPill(zetaris?.status)}
           </div>
 
           <p className="text-xs text-[#667066] leading-relaxed">
-            Simulates Zetaris cross-source virtualization engine using in-memory Node 22 SQLite federating queries across Purchase Orders, Goods Delivery Notes, Invoices, and Master Contract pricing CSVs.
+            Federates 4 disparate procurement datasets (Purchase Orders, Delivery Receipts, Invoices, Contract Prices) into a single virtualized view using Node 22 SQLite engine when remote credentials are unconfigured.
           </p>
 
           <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E7E2] text-xs font-mono space-y-1 text-[#667066]">
             <div>Engine: <span className="text-[#143D2F] font-semibold">{zetaris?.engine || "In-Memory SQLite Virtualizer"}</span></div>
             <div>Latency: <span className="text-[#143D2F]">{zetaris?.latencyMs || 2}ms</span></div>
-            <div>Mode: <span className="text-[#246B52] font-semibold">{zetaris?.mode?.toUpperCase() || "MOCK"}</span></div>
+            <div>State: <span className="text-[#246B52] font-semibold">{zetaris?.status || "Local / demo mode"}</span></div>
+            {zetaris?.reason && <div className="text-[11px] text-[#8F9A8F]">Note: {zetaris.reason}</div>}
           </div>
         </div>
 
@@ -81,19 +131,18 @@ export const IntegrationsScreen: React.FC<IntegrationsScreenProps> = ({
                 <span className="text-xs text-[#667066]">Agent Mission Orchestration & H-MEM</span>
               </div>
             </div>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-[#EAF3ED] text-[#246B52] border border-[#DCEBE1]">
-              Connected
-            </span>
+            {renderStatusPill(meterless?.status)}
           </div>
 
           <p className="text-xs text-[#667066] leading-relaxed">
-            Executes agent investigation missions following the documented 5-step relay architecture: Scout Intent → Fetch Unified Data → Detect Discrepancies → Score Confidence → Draft Explanation.
+            Coordinates the 5-step agent investigation workflow (Scout Intent → Fetch Unified Data → Detect Discrepancies → Score Confidence → Draft Explanation) with hierarchical session memory tracking.
           </p>
 
           <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E7E2] text-xs font-mono space-y-1 text-[#667066]">
-            <div>Relay: <span className="text-[#143D2F] font-semibold">5-Step Sequential Pipeline</span></div>
-            <div>Memory: <span className="text-[#143D2F]">H-MEM Session Store Active</span></div>
-            <div>Status: <span className="text-[#246B52] font-semibold">OPERATIONAL</span></div>
+            <div>Pipeline: <span className="text-[#143D2F] font-semibold">5-Step Sequential Agent Relay</span></div>
+            <div>Memory: <span className="text-[#143D2F]">H-MEM In-Memory Session Store</span></div>
+            <div>State: <span className="text-[#246B52] font-semibold">{meterless?.status || "Local / demo mode"}</span></div>
+            {meterless?.reason && <div className="text-[11px] text-[#8F9A8F]">Note: {meterless.reason}</div>}
           </div>
         </div>
 
@@ -105,23 +154,22 @@ export const IntegrationsScreen: React.FC<IntegrationsScreenProps> = ({
                 <Cpu className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-serif text-lg font-bold text-[#143D2F]">NVIDIA Nemotron</h3>
-                <span className="text-xs text-[#667066]">Inference Microservice (NIM)</span>
+                <h3 className="font-serif text-lg font-bold text-[#143D2F]">NVIDIA NIM</h3>
+                <span className="text-xs text-[#667066]">Inference Microservice & Dispute Drafter</span>
               </div>
             </div>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-[#FAF8F3] text-[#667066] border border-[#E5E7E2]">
-              Deterministic Fallback
-            </span>
+            {renderStatusPill(nvidia?.status)}
           </div>
 
           <p className="text-xs text-[#667066] leading-relaxed">
-            Translates deterministic reconciliation math into plain-language executive summaries and formal supplier dispute letters. When NVIDIA_API_KEY is not set, runs via the high-fidelity deterministic fallback engine.
+            Translates deterministic reconciliation findings into audit summaries and supplier dispute emails. Strictly guarded: numerical calculations are computed server-side in TypeScript, preventing LLM hallucinations.
           </p>
 
           <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E7E2] text-xs font-mono space-y-1 text-[#667066]">
-            <div>Target Model: <span className="text-[#143D2F] font-semibold">nvidia/nemotron-4-340b-instruct</span></div>
-            <div>Endpoint: <span className="text-[#143D2F]">https://integrate.api.nvidia.com</span></div>
-            <div>Guardrail: <span className="text-[#246B52] font-semibold">Financial Math Strict in TypeScript</span></div>
+            <div>Model: <span className="text-[#143D2F] font-semibold">{nvidia?.model || "meta/llama-3.1-8b-instruct"}</span></div>
+            <div>Endpoint: <span className="text-[#143D2F] truncate block">https://integrate.api.nvidia.com</span></div>
+            <div>State: <span className="text-[#246B52] font-semibold">{nvidia?.status || "Local / demo mode"}</span></div>
+            {nvidia?.reason && <div className="text-[11px] text-[#8F9A8F]">Note: {nvidia.reason}</div>}
           </div>
         </div>
 
@@ -134,26 +182,23 @@ export const IntegrationsScreen: React.FC<IntegrationsScreenProps> = ({
               </div>
               <div>
                 <h3 className="font-serif text-lg font-bold text-[#143D2F]">Cursor</h3>
-                <span className="text-xs text-[#667066]">Pair Programming Audit Trail</span>
+                <span className="text-xs text-[#667066]">Developer Velocity & Pair Programming</span>
               </div>
             </div>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-[#EAF3ED] text-[#246B52] border border-[#DCEBE1]">
-              Prompts Logged
-            </span>
+            {renderStatusPill(cursor?.status)}
           </div>
 
           <p className="text-xs text-[#667066] leading-relaxed">
-            Full audit log of developer prompts, architectural decisions, and refactoring sessions maintained in docs/CURSOR_USAGE.md and PROMPTS_LOG.md.
+            Full audit log of developer prompts, architectural decisions, and refactoring sessions maintained in docs/CURSOR_USAGE.md.
           </p>
 
           <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E7E2] text-xs font-mono space-y-1 text-[#667066]">
             <div>Documentation: <span className="text-[#143D2F] font-semibold">docs/CURSOR_USAGE.md</span></div>
             <div>Prompt Log: <span className="text-[#143D2F]">PROMPTS_LOG.md</span></div>
-            <div>Git Commits: <span className="text-[#246B52] font-semibold">VERIFIED & PUSHED</span></div>
+            <div>State: <span className="text-[#246B52] font-semibold">Audit Logged (Git Tracked)</span></div>
           </div>
         </div>
       </div>
     </div>
   );
 };
-

@@ -249,6 +249,13 @@ export interface CustomAuditParams {
   fees: number;
 }
 
+export type IntegrationHealthStatus =
+  | "Connected and verified"
+  | "Configured but not verified"
+  | "Not configured"
+  | "Blocked by credentials or account access"
+  | "Local / demo mode";
+
 export interface SystemHealth {
   status: string;
   timestamp: string;
@@ -258,28 +265,38 @@ export interface SystemHealth {
   sponsorIntegrations: {
     zetaris: {
       layer: string;
+      status: string;
       mode: "live" | "mock";
       engine: string;
       latencyMs: number;
       isLive: boolean;
       endpoint?: string;
+      reason?: string;
     };
     meterless: {
       layer: string;
+      status: string;
       mode: string;
       isLive: boolean;
       architecture: string;
+      endpoint?: string;
+      reason?: string;
     };
     nvidia: {
       layer: string;
+      status: string;
       model: string;
       isLive: boolean;
       mode: string;
+      endpoint?: string;
+      reason?: string;
     };
     cursor: {
       layer: string;
+      status: string;
       promptsLogged: boolean;
       documentationPath: string;
+      note?: string;
     };
   };
 }
