@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - NODE_ENV=production
+      - ZETARIS_API_URL=${ZETARIS_API_URL:-}
+      - ZETARIS_API_KEY=${ZETARIS_API_KEY:-}
+      - METERLESS_API_URL=${METERLESS_API_URL:-}
+      - METERLESS_API_KEY=${METERLESS_API_KEY:-}
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY:-}
+      - DATA_PATH=/app/data
+    volumes:
+      - ./data:/app/data:ro
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
